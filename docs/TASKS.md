@@ -42,15 +42,15 @@ Detalhe da S1: `docs/SPRINT-1.md`.
 | T2.2 | Journal → agregados incrementais + paridade | 2 | A | C3 | perf-engineer | sonnet | 8 | T2.1, G1 | S1 | done (15/10, fights10 heap 187→78 MB, paridade 25 logs) |
 | T2.3 | Archive em disco comprimido, resumo em RAM | 2 | A | C3 | perf-engineer #2 | sonnet | 5 | T2.1, G1 | S1 | done (15/10, Brotli em %TEMP%, heap −27% isolado) |
 | T2.4 | Playback lazy + liberar ao fechar | 2 | C | C3 | ui-dev | sonnet | 5 | T2.1, G1 | S1 | todo (H3 descartada: só validar liberação ao fechar) |
-| T2.5 | Sem animações no LiteMode, UI a 4 Hz | 2 | C | C2 | ui-dev | sonnet | 3 | T2.1 | S1 | todo |
+| T2.5 | Sem animações no LiteMode, UI a 4 Hz | 2 | C | C2 | ui-dev | sonnet | 3 | T2.1 | S1 | done (15/10; bench de CPU com UI pendente) |
 | T2.6 | Carregar só o pack de idioma ativo | 2 | A | C2 | core-dev | sonnet | 2 | T2.1 | S1 | todo (H6 descartada: só validar) |
-| T2.7 | Change logs em ring buffer | 2 | A | C2 | core-dev | sonnet | 2 | T2.1 | S1 | parcial (ring buffer pronto; falta ligar changeLogLimit ao LiteMode) |
+| T2.7 | Change logs em ring buffer | 2 | A | C2 | core-dev | sonnet | 2 | T2.1 | S1 | done (15/10, limite 65536 no LiteMode) |
 | T2.8 | Tuning de GC, uma flag por vez | 2 | A | C3 | perf-engineer | sonnet | 3 | T2.2–T2.7 | S2 | todo |
 | T2.9 | Bench final vs baseline (meta −50%) | 2 | A | C2 | perf-engineer | sonnet | 2 | T2.8 | S2 | todo |
 | T3.1 | `Aion2Flow.Persistence` (SQLite AOT) | 3 | B | C2 | core-dev #2 | sonnet | 5 | T0.2 | S1 | done (15/10, 5 testes; publish AOT pendente: falta MSVC) |
 | T3.2 | `Aion2Flow.Domain.Progress` | 3 | B | C2 | core-dev #2 | sonnet | 3 | T0.2 | S1 | done (14/10, 8 testes) |
 | T3.3 | `ResetClock` multi-fuso | 3 | B | C3 | core-dev #2 | sonnet | 3 | T3.2 | S1 | done (15/10; reset 05:00/quarta = suposição, confirmar) |
-| T3.4 | Abas Overlay / Hoje / Semana / Alts / Timers | 3 | C | C2 | ui-dev #2 | sonnet | 3 | T3.2 | S1 | todo |
+| T3.4 | Abas Overlay / Hoje / Semana / Alts / Timers | 3 | C | C2 | ui-dev #2 | sonnet | 3 | T3.2 | S1 | parcial (casca com 5 abas; falta ligar na MainWindow + LiteMode) |
 | T3.5 | Testes do ResetClock (dia, semana, DST) | 3 | B | C2 | test-engineer | sonnet | 2 | T3.3 | S1 | done (15/10, 25 testes) |
 | T4.1 | `data/tasks.json` + checklist | 4 | C/E | C1/C2 | ops-docs + ui-dev | haiku/sonnet | 3 | T3.4 | S2 | todo |
 | T4.2 | Cadastro de alts | 4 | B/C | C2 | core-dev + ui-dev | sonnet | 3 | T3.1 | S2 | todo |
@@ -70,3 +70,4 @@ Detalhe da S1: `docs/SPRINT-1.md`.
 - **Pendências técnicas:** medir app completo com UI+WinDivert (admin) para RAM idle real, CPU em luta, H4/H5; refazer gcdump não-lossy. Limpar `D:\tmpbench\` (lixo de build).
 - **Próxima sessão:** T2.1 → T2.2 ‖ T2.3 ‖ T2.7 (trilha A), T3.1 ‖ T3.3 (trilha B), T2.5 (trilha C).
 - **15/10 (D1):** T2.1, T2.2, T2.3, T3.1, T3.3, T3.5 ✅; T2.7 parcial. Build Release 0 warnings, 1132 testes verdes. Pendências: ligar T2.7 ao LiteMode; bench combinado T2.2+T2.3; instalar MSVC Build Tools para publish AOT; confirmar horário de reset; medir app com UI (admin).
+- **15/10 (D1, 2ª leva):** T2.7 ligado, T2.5 ✅, T3.4 casca. Bench combinado fights10 Lite: WS 158 MB (−36%), heap 73,7 MB (−61%) vs baseline. 1132 testes verdes, 0 warnings.

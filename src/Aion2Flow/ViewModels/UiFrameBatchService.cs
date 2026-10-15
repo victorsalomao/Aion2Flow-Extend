@@ -1,4 +1,5 @@
 using Cloris.Aion2Flow.Services;
+using Cloris.Aion2Flow.Services.Settings;
 
 namespace Cloris.Aion2Flow.ViewModels;
 
@@ -11,9 +12,19 @@ public sealed class UiFrameBatchService
     {
     }
 
-    public UiFrameBatchService(AvaloniaFrameClockService frameClock)
+    private static readonly TimeSpan LiteInterval = TimeSpan.FromMilliseconds(250);
+    private TimeSpan _lastFlush = TimeSpan.MinValue;
+
+    public UiFrameBatchService(AvaloniaFrameClockService frameClock, SettingsService settings)
     {
-        frameClock.FrameCompleted += (_, _) => FlushFrame();
+        frameClock.FrameCompleted += (_, e) =>
+        {
+            // LiteMode: UI refresh capped at 4 Hz (T2.5).
+            if (settings.Current.LiteMode && _lastFlush != TimeSpan.MinValue && e.Timestamp - _lastFlush < LiteInterval)
+                return;
+            _lastFlush = e.Timestamp;
+            FlushFrame();
+        };
     }
 
     internal void Enqueue(FrameBatchedObservableObject viewModel)

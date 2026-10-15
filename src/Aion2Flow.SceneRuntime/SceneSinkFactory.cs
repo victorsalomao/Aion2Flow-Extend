@@ -36,6 +36,8 @@ public sealed class SceneLiveReadModel : ILiveSceneCollectionPolicy
 {
     private const int LiveJournalInitialCapacity = 4_096;
     private const int LiveCombatEventInitialCapacity = 4_096;
+    private const int LiteChangeLogLimit = 65_536;
+    private readonly int _changeLogLimit;
     private const int LiveCombatantInitialCapacity = 128;
     private const int LivePairInitialCapacity = 512;
     private readonly Lock _gate = new();
@@ -115,6 +117,7 @@ public sealed class SceneLiveReadModel : ILiveSceneCollectionPolicy
         SessionId = Guid.NewGuid();
         SessionStarted = sessionStarted;
         Clock = new SceneRuntimeClock(sessionStarted.ToUnixTimeMilliseconds());
+        _changeLogLimit = liteMode ? LiteChangeLogLimit : 0;
         Journal = new ObservedEventJournal(LiveJournalInitialCapacity) { DiscardConsumed = liteMode == true };
         _owner = CreateOwner(SessionId, sessionStarted, Journal.FirstObservationOrdinal);
         _kind = SceneKind.Standard;
@@ -591,11 +594,12 @@ public sealed class SceneLiveReadModel : ILiveSceneCollectionPolicy
             new EntityStore(),
             new SceneBoundaryStore(),
             new RuntimeMetadataRegistry(),
-            new CombatStore(LiveCombatEventInitialCapacity, LiveCombatantInitialCapacity, LivePairInitialCapacity),
+            new CombatStore(LiveCombatEventInitialCapacity, LiveCombatantInitialCapacity, LivePairInitialCapacity, _changeLogLimit),
             _timeProvider,
             _combatOccurrenceObserver,
             _auraLifecycleObserver,
-            startObservationOrdinal);
+            startObservationOrdinal,
+            _changeLogLimit);
 
         if (_kind != SceneKind.Standard)
         {

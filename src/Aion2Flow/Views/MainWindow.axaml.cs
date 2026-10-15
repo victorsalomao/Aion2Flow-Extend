@@ -68,6 +68,7 @@ public partial class MainWindow : Window
         _uiScale = Ioc.Default.GetRequiredService<UiScaleService>();
         _localization = Ioc.Default.GetRequiredService<LocalizationService>();
         DataContext.InitializeAsync().ConfigureAwait(false);
+        AnimatedItemsView.ReduceMotion = _settingsService.Current.LiteMode;
         InitializeComponent();
         _overlayRoot = Content as Control;
         DataContext.EncounterHistory.CollectionChanged += OnEncounterHistoryCollectionChanged;

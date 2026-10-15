@@ -73,3 +73,14 @@ Teste de paridade: `LiteModeJournalParityTests` (25 logs, DPS/dano/cura/hits ide
 | fights10 depois (LiteMode) | 170,6 | 78,3 | 4672-5188 (5145-5713) |
 
 Ganho: -79 MB WS (-32%), -109 MB heap (-58%), CPU nao subiu (wall -20%). Residual 78 MB = archives (T2.3) + change logs (T2.7). Private Bytes e "5 min"/CPU de UI nao medidos (harness sem UI).
+
+## Combinado S1 - T2.2 + T2.3 + T2.7 (2026-10-14)
+T2.7: `ChangeRingBuffer` limitado a 65.536 entradas por store (Combat/Mechanic/Resource) quando `AppSettings.LiteMode` (SceneLiveReadModel -> CreateOwner -> SceneReadModelOwner/SceneProjectionState/DomainEventApplier). Unico consumidor: `CombatDetailSubscription` (cursor reiniciado em cada snapshot e sondado a cada refresh da UI, <= poucos milhares de mudancas por ciclo), entao 65.536 nao perde mudancas; se um cursor ficar atras, so as mais antigas sao descartadas. Paridade: `LiteModeJournalParityTests` (agora com limite ativo) + UnitTests 1052 + ReplayTests 50 verdes, 0 warnings.
+
+| fights10 (`bench.ps1 -Scenario fights -Fights 10 -Runs 2 -Lite`) | WS pos-GC MB | WS pico MB | Heap pos-GC MB |
+|---|---|---|---|
+| antes (journal completo, LiteMode off) | 249,5 | n/d | 187,0 |
+| T2.2 isolado | 170,6 | n/d | 78,3 |
+| Combinado S1 (run1 / run2) | 158,1 / 159,3 | 158,3 / 161,3 | 73,7 / 73,7 |
+
+Variacao entre runs: WS 0,8%. Ganho total vs antes: -91 MB WS (-36%), -113 MB heap (-61%). CPU (pct) varia 13% entre runs, sem alta aparente. Private Bytes/5 min nao medidos (harness sem UI). Obs: o ganho do T2.7 isolado (~-12 MB WS) e pequeno nas fixtures porque poucos logs passam de 65k mudancas por store.

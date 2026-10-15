@@ -10,12 +10,14 @@ namespace Cloris.Aion2Flow.SceneRuntime.Projection;
 internal sealed class SceneProjectionState
 {
     private SceneCombatSnapshotAdapter? _adapter;
+    private readonly int _sideStoreChangeLogLimit;
 
     public static SceneProjectionState Create(
         Guid encounterId,
         int combatInitialCapacity = 0,
         ICombatOccurrenceObserver? combatOccurrenceObserver = null,
-        IAuraLifecycleObserver? auraLifecycleObserver = null)
+        IAuraLifecycleObserver? auraLifecycleObserver = null,
+        int sideStoreChangeLogLimit = 0)
         => new(
             encounterId,
             new EntityStore(),
@@ -32,7 +34,8 @@ internal sealed class SceneProjectionState
         RuntimeMetadataRegistry metadataRegistry,
         CombatStore combat,
         ICombatOccurrenceObserver? combatOccurrenceObserver = null,
-        IAuraLifecycleObserver? auraLifecycleObserver = null)
+        IAuraLifecycleObserver? auraLifecycleObserver = null,
+        int sideStoreChangeLogLimit = 0)
     {
         EncounterId = encounterId;
         Entities = entities;
@@ -41,6 +44,7 @@ internal sealed class SceneProjectionState
         Combat = combat;
         CombatOccurrenceObserver = combatOccurrenceObserver;
         AuraLifecycleObserver = auraLifecycleObserver;
+        _sideStoreChangeLogLimit = sideStoreChangeLogLimit;
         Applier = CreateApplier(trackBossFocus: true);
     }
 
@@ -92,7 +96,8 @@ internal sealed class SceneProjectionState
             MetadataRegistry,
             Combat,
             CombatOccurrenceObserver,
-            AuraLifecycleObserver)
+            AuraLifecycleObserver,
+            _sideStoreChangeLogLimit)
         {
             TrackBossFocus = trackBossFocus
         };

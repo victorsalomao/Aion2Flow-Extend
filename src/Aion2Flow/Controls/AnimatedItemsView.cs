@@ -87,8 +87,11 @@ public sealed class AnimatedItemsView : Panel
     public double ItemHeight { get => GetValue(ItemHeightProperty); set => SetValue(ItemHeightProperty, value); }
     public double ItemSpacing { get => GetValue(ItemSpacingProperty); set => SetValue(ItemSpacingProperty, value); }
     public int MaxVisibleItems { get => GetValue(MaxVisibleItemsProperty); set => SetValue(MaxVisibleItemsProperty, value); }
-    public TimeSpan MoveDuration { get => GetValue(MoveDurationProperty); set => SetValue(MoveDurationProperty, value); }
-    public TimeSpan AddRemoveDuration { get => GetValue(AddRemoveDurationProperty); set => SetValue(AddRemoveDurationProperty, value); }
+    /// <summary>LiteMode: forces move/add/remove/scroll animations to zero duration.</summary>
+    public static bool ReduceMotion { get; set; }
+
+    public TimeSpan MoveDuration { get => ReduceMotion ? TimeSpan.Zero : GetValue(MoveDurationProperty); set => SetValue(MoveDurationProperty, value); }
+    public TimeSpan AddRemoveDuration { get => ReduceMotion ? TimeSpan.Zero : GetValue(AddRemoveDurationProperty); set => SetValue(AddRemoveDurationProperty, value); }
     public double AddRemoveOffset { get => GetValue(AddRemoveOffsetProperty); set => SetValue(AddRemoveOffsetProperty, value); }
     public ScrollBarVisibility VerticalScrollBarVisibility { get => GetValue(VerticalScrollBarVisibilityProperty); set => SetValue(VerticalScrollBarVisibilityProperty, value); }
     public bool IsSelectionEnabled { get => GetValue(IsSelectionEnabledProperty); set => SetValue(IsSelectionEnabledProperty, value); }

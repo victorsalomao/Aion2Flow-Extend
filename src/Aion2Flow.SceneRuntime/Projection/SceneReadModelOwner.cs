@@ -19,12 +19,13 @@ public sealed class SceneReadModelOwner(
     TimeProvider? timeProvider = null,
     ICombatOccurrenceObserver? combatOccurrenceObserver = null,
     IAuraLifecycleObserver? auraLifecycleObserver = null,
-    long? startObservationOrdinal = null)
+    long? startObservationOrdinal = null,
+    int sideStoreChangeLogLimit = 0)
 {
     public const long BossFocusVisibilityTimeoutMilliseconds = 10_000;
     private readonly Lock _gate = new();
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
-    private readonly SceneProjectionState _projection = new(encounterId, entities, boundary, metadataRegistry, combat, combatOccurrenceObserver, auraLifecycleObserver);
+    private readonly SceneProjectionState _projection = new(encounterId, entities, boundary, metadataRegistry, combat, combatOccurrenceObserver, auraLifecycleObserver, sideStoreChangeLogLimit);
     private readonly SceneCombatSnapshotBuilder _snapshotBuilder = new();
     private readonly Dictionary<int, CombatDetailSubscription> _detailSubscriptions = [];
     private readonly Dictionary<int, CombatDetailDelta> _lastDetailDeltas = [];
