@@ -49,7 +49,7 @@ Detalhe da S1: `docs/SPRINT-1.md`.
 | T2.9 | Bench final vs baseline (meta −50%) | 2 | A | C2 | perf-engineer | sonnet | 2 | T2.8 | S2 | todo |
 | T3.1 | `Aion2Flow.Persistence` (SQLite AOT) | 3 | B | C2 | core-dev #2 | sonnet | 5 | T0.2 | S1 | done (15/10, 5 testes; publish AOT pendente: falta MSVC) |
 | T3.2 | `Aion2Flow.Domain.Progress` | 3 | B | C2 | core-dev #2 | sonnet | 3 | T0.2 | S1 | done (14/10, 8 testes) |
-| T3.3 | `ResetClock` multi-fuso | 3 | B | C3 | core-dev #2 | sonnet | 3 | T3.2 | S1 | done (15/10; reset 05:00/quarta = suposição, confirmar) |
+| T3.3 | `ResetClock` multi-fuso | 3 | B | C3 | core-dev #2 | sonnet | 3 | T3.2 | S1 | done (15/10; reset 05:00 + quarta confirmado pelo Victor) |
 | T3.4 | Abas Overlay / Hoje / Semana / Alts / Timers | 3 | C | C2 | ui-dev #2 | sonnet | 3 | T3.2 | S1 | parcial (casca com 5 abas; falta ligar na MainWindow + LiteMode) |
 | T3.5 | Testes do ResetClock (dia, semana, DST) | 3 | B | C2 | test-engineer | sonnet | 2 | T3.3 | S1 | done (15/10, 25 testes) |
 | T4.1 | `data/tasks.json` + checklist | 4 | C/E | C1/C2 | ops-docs + ui-dev | haiku/sonnet | 3 | T3.4 | S2 | todo |
@@ -71,3 +71,5 @@ Detalhe da S1: `docs/SPRINT-1.md`.
 - **Próxima sessão:** T2.1 → T2.2 ‖ T2.3 ‖ T2.7 (trilha A), T3.1 ‖ T3.3 (trilha B), T2.5 (trilha C).
 - **15/10 (D1):** T2.1, T2.2, T2.3, T3.1, T3.3, T3.5 ✅; T2.7 parcial. Build Release 0 warnings, 1132 testes verdes. Pendências: ligar T2.7 ao LiteMode; bench combinado T2.2+T2.3; instalar MSVC Build Tools para publish AOT; confirmar horário de reset; medir app com UI (admin).
 - **15/10 (D1, 2ª leva):** T2.7 ligado, T2.5 ✅, T3.4 casca. Bench combinado fights10 Lite: WS 158 MB (−36%), heap 73,7 MB (−61%) vs baseline. 1132 testes verdes, 0 warnings.
+- **Fim da sessão 15/10:** horário de reset confirmado (05:00, semanal na quarta). Ficaram em andamento e **sem commit** no working tree: ligar as abas da T3.4 na MainWindow/DI (lazy, 4 Hz) e verificar T2.4/T2.6 (ScenePlaybackReleaseTests).
+- **Próxima sessão:** (1) `git status`, revisar o diff, `dotnet build -c Release` + `dotnet test` e commitar; (2) Victor instala MSVC Build Tools → validar publish AOT; (3) medir o app com UI + WinDivert (admin) e o jogo aberto: RAM idle, CPU em luta, H4/H5, CPU da T2.5; (4) T5.1 capturas → T5.2; (5) Sprint 2: T2.8, T2.9, T4.x.
