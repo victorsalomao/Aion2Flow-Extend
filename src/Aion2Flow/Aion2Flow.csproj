@@ -11,6 +11,11 @@
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
+  <!-- Build de medição (scripts/measure-session.ps1): dotnet build -c Release -p:Measure=true -->
+  <PropertyGroup Condition="'$(Measure)' == 'true'">
+    <EventSourceSupport>true</EventSourceSupport>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="Avalonia.Themes.Simple" />
@@ -28,6 +33,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Aion2Flow.Capture\Aion2Flow.Capture.csproj" />
+    <ProjectReference Include="..\Aion2Flow.Persistence\Aion2Flow.Persistence.csproj" />
     <ProjectReference Include="..\Aion2Flow.Resources\Aion2Flow.Resources.csproj" />
     <ProjectReference Include="..\Aion2Flow.SceneRuntime\Aion2Flow.SceneRuntime.csproj" />
     <ProjectReference Include="..\Aion2Flow.WinDivert\Aion2Flow.WinDivert.csproj" />
@@ -35,6 +41,7 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\Images\**" />
+    <Content Include="..\..\data\*.json" Link="data\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

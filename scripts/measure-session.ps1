@@ -1,5 +1,7 @@
 <#
 .SYNOPSIS  Mede o Aion2Flow durante uma sessao: counters CSV + gcdumps periodicos.
+.NOTES     Requer build com EventSource: dotnet build src/Aion2Flow -c Release -p:Measure=true
+           (sem isso o CSV sai vazio). Build JIT: a RAM fica acima da do AOT; use para tendencia/vazamento.
 .EXAMPLE   .\scripts\measure-session.ps1 -GcDumpMinutes 15
 #>
 param(

@@ -52,12 +52,12 @@ Detalhe da S1: `docs/SPRINT-1.md`.
 | T3.3 | `ResetClock` multi-fuso | 3 | B | C3 | core-dev #2 | sonnet | 3 | T3.2 | S1 | done (15/10; reset 05:00 + quarta confirmado pelo Victor) |
 | T3.4 | Abas Overlay / Hoje / Semana / Alts / Timers | 3 | C | C2 | ui-dev #2 | sonnet | 3 | T3.2 | S1 | done (16/10, ligado na MainWindow + DI) |
 | T3.5 | Testes do ResetClock (dia, semana, DST) | 3 | B | C2 | test-engineer | sonnet | 2 | T3.3 | S1 | done (15/10, 25 testes) |
-| T4.1 | `data/tasks.json` + checklist | 4 | C/E | C1/C2 | ops-docs + ui-dev | haiku/sonnet | 3 | T3.4 | S2 | todo |
-| T4.2 | Cadastro de alts | 4 | B/C | C2 | core-dev + ui-dev | sonnet | 3 | T3.1 | S2 | parcial (domínio pronto; falta UI) |
-| T4.3 | Campos manuais com delta "hoje" | 4 | B/C | C2 | core-dev + ui-dev | sonnet | 3 | T3.1 | S2 | parcial (domínio + migração v2; falta UI) |
-| T4.4 | Recarga de resina + notificação | 4 | B | C2 | core-dev | sonnet | 3 | T4.3 | S2 | parcial (domínio + migração v2; falta UI) |
-| T4.5 | `data/events.json` + timers | 4 | C/E | C1/C2 | ops-docs + ui-dev | haiku/sonnet | 3 | T3.3 | S2 | todo |
-| T4.6 | Calculadora de temporada | 4 | B | C2 | core-dev | sonnet | 2 | T4.3 | S2 | parcial (domínio + migração v2; falta UI) |
+| T4.1 | `data/tasks.json` + checklist | 4 | C/E | C1/C2 | ops-docs + ui-dev | haiku/sonnet | 3 | T3.4 | S2 | feito (falta validação manual da UI) |
+| T4.2 | Cadastro de alts | 4 | B/C | C2 | core-dev + ui-dev | sonnet | 3 | T3.1 | S2 | feito (falta validação manual da UI) |
+| T4.3 | Campos manuais com delta "hoje" | 4 | B/C | C2 | core-dev + ui-dev | sonnet | 3 | T3.1 | S2 | feito (falta validação manual da UI) |
+| T4.4 | Recarga de resina + notificação | 4 | B | C2 | core-dev | sonnet | 3 | T4.3 | S2 | feito (falta validação manual da UI) |
+| T4.5 | `data/events.json` + timers | 4 | C/E | C1/C2 | ops-docs + ui-dev | haiku/sonnet | 3 | T3.3 | S2 | feito (falta validação manual da UI) |
+| T4.6 | Calculadora de temporada | 4 | B | C2 | core-dev | sonnet | 2 | T4.3 | S2 | feito (falta validação manual da UI) |
 | T5.1 | Gravar sessões de pacotes (**capturas do Victor até 18/10**) | 5 | D | C2 | protocol-re | sonnet | 2 | Victor | S1 | blocked — roteiro pronto em docs/ROTEIRO-CAPTURAS.md (build Debug), aguarda Victor até 18/10 |
 | T5.2 | Diff de opcodes | 5 | D | C3 | protocol-re | sonnet | 5 | T5.1 | S1 | todo |
 | T5.3 | Parsers novos + testes | 5 | D | C3 | protocol-re | sonnet | 5 | T5.2 | S2 | todo |
@@ -75,3 +75,4 @@ Detalhe da S1: `docs/SPRINT-1.md`.
 - **Próxima sessão:** (1) `git status`, revisar o diff, `dotnet build -c Release` + `dotnet test` e commitar; (2) Victor instala MSVC Build Tools → validar publish AOT; (3) medir o app com UI + WinDivert (admin) e o jogo aberto: RAM idle, CPU em luta, H4/H5, CPU da T2.5; (4) T5.1 capturas → T5.2; (5) Sprint 2: T2.8, T2.9, T4.x.
 - **Atualização 15/10:** T2.4/T2.6 verificadas pelo agente em Debug (1057 + 50 verdes). T2.6 corrigiu vazamento de idiomas (~−3 MB). Decisão aberta: incluir o journal no spill do archive para o playback no LiteMode não ficar com a timeline vazia. Tudo isso ainda sem commit; falta o build Release com o app fechado.
 - **16/10:** commit abas+T2.4/T2.6; publish AOT OK (31,5 MB; vswhere precisa estar no PATH); app real Lite com jogo: WS 138 MB idle, CPU ~0,5%; +18 MB em 3 min (checar vazamento em sessão longa). T4.2–T4.4 domínio pronto.
+- **16/10 (Fase 4):** T4.1–T4.6 implementadas (tasks.json/events.json provisórios, ChecklistService, EventTimerService, SeasonCalculator, UI na aba de progresso com alts/checklist/campos/resina/timers/temporada). Build Release 0 warnings; testes verdes (Domain.Progress 37, Persistence 10, Replay 50, Unit 1057). Pendente: validar telas rodando, dados reais de tarefas/eventos/resina, seletor de região (fixo KR), notificação fora do painel.

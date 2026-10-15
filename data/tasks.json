@@ -1,0 +1,17 @@
+{
+  "tasks": [
+    { "id": "daily-duty", "name": "Missões de Dever (Duty)", "type": "daily", "maxCount": 5 },
+    { "id": "daily-nightmare", "name": "Pesadelo (Nightmare)", "type": "daily", "maxCount": 2 },
+    { "id": "daily-shugo-key", "name": "Chave do Festival Shugo", "type": "daily", "maxCount": 3 },
+    { "id": "daily-invasion-key", "name": "Chave da Invasão Dimensional", "type": "daily", "maxCount": 1 },
+    { "id": "weekly-raid", "name": "Raid (tentativas por raid)", "type": "weekly", "maxCount": 4 },
+    { "id": "weekly-ascension", "name": "Provação da Ascensão", "type": "weekly", "maxCount": 3 },
+    { "id": "weekly-subjugation", "name": "Subjugação (tickets)", "type": "weekly", "maxCount": 3 },
+    { "id": "weekly-expedition", "name": "Expedição (recompensas por masmorra)", "type": "weekly", "maxCount": 7 },
+    { "id": "weekly-fissure", "name": "Fenda Desconhecida", "type": "weekly", "maxCount": 14 },
+    { "id": "weekly-conquest-boss", "name": "Conquista: chefes finais", "type": "weekly", "maxCount": 35 },
+    { "id": "weekly-transcendence-boss", "name": "Transcendência: chefes finais", "type": "weekly", "maxCount": 28 },
+    { "id": "weekly-battlefield", "name": "Campo de Batalha (vitórias)", "type": "weekly", "maxCount": 3 },
+    { "id": "weekly-odyle-morph", "name": "Transmutação de Energia Odyle", "type": "weekly", "maxCount": 4 }
+  ]
+}

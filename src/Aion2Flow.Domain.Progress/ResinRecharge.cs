@@ -1,7 +1,43 @@
 namespace Cloris.Aion2Flow.Domain.Progress;
 
 /// <summary>Regra de recarga: <paramref name="Points"/> a cada <paramref name="Interval"/>.</summary>
-public sealed record RechargeRule(string Key, TimeSpan Interval, int Points = 1);
+public sealed record RechargeRule(string Key, TimeSpan Interval, int Points = 1)
+{
+    public const int DefaultMax = 560;
+    public const int SubscriberMax = 840;
+    public const int DefaultPoints = 15;
+    public const int DefaultIntervalMinutes = 180;
+
+    /// <summary>Padrao da resina: 15 pontos a cada 180 min.</summary>
+    public static RechargeRule Default(string key) => new(key, TimeSpan.FromMinutes(DefaultIntervalMinutes), DefaultPoints);
+}
+
+/// <summary>Campos manuais da resina (por alt): intervalo (min), pontos por recarga e assinatura (0/1).</summary>
+public static class ResinFields
+{
+    public const string Key = "resin";
+    public const string Interval = "resin.interval";
+    public const string Points = "resin.points";
+    public const string Subscribed = "resin.subscribed";
+
+    public static RechargeRule BuildRule(IEnumerable<ManualField> fields)
+    {
+        long interval = 0, points = 0;
+        foreach (var f in fields)
+        {
+            if (f.Key == Interval) interval = f.Value;
+            else if (f.Key == Points) points = f.Value;
+        }
+
+        return new RechargeRule(Key,
+            TimeSpan.FromMinutes(interval > 0 ? interval : RechargeRule.DefaultIntervalMinutes),
+            points > 0 ? (int)Math.Min(points, int.MaxValue) : RechargeRule.DefaultPoints);
+    }
+
+    public static bool IsSubscribed(IEnumerable<ManualField> fields) => fields.Any(f => f.Key == Subscribed && f.Value != 0);
+
+    public static int MaxFor(bool subscribed) => subscribed ? RechargeRule.SubscriberMax : RechargeRule.DefaultMax;
+}
 
 public static class ResinCalculator
 {
@@ -30,9 +66,27 @@ public interface IResinNotifier
 }
 
 /// <summary>Notifica uma unica vez por estado salvo quando a recarga completa.</summary>
-public sealed class ResinMonitor(IResourceRepository repo, IResinNotifier notifier, RechargeRule rule, TimeProvider? time = null)
+public sealed class ResinMonitor
 {
-    private readonly TimeProvider _time = time ?? TimeProvider.System;
+    private readonly IResourceRepository repo;
+    private readonly IResinNotifier notifier;
+    private readonly Func<AltId, RechargeRule> ruleFor;
+    private readonly TimeProvider _time;
+
+    public ResinMonitor(IResourceRepository repo, IResinNotifier notifier, RechargeRule rule, TimeProvider? time = null)
+        : this(repo, notifier, _ => rule, time)
+    {
+    }
+
+    /// <summary>Regra por alt (intervalo/pontos/assinatura sao campos manuais por personagem).</summary>
+    public ResinMonitor(IResourceRepository repo, IResinNotifier notifier, Func<AltId, RechargeRule> ruleFor, TimeProvider? time = null)
+    {
+        this.repo = repo;
+        this.notifier = notifier;
+        this.ruleFor = ruleFor;
+        _time = time ?? TimeProvider.System;
+    }
+
     private readonly HashSet<(AltId, DateTimeOffset)> _notified = [];
 
     public async Task<int> CheckAsync(IEnumerable<AltId> alts, CancellationToken ct = default)
@@ -41,6 +95,7 @@ public sealed class ResinMonitor(IResourceRepository repo, IResinNotifier notifi
         var count = 0;
         foreach (var alt in alts)
         {
+            var rule = ruleFor(alt);
             foreach (var r in await repo.ListByAltAsync(alt, ct))
             {
                 if (r.Key != rule.Key) continue;

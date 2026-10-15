@@ -323,8 +323,9 @@
                         Margin="30,0,0,0"
                         Classes="BottomBarButton"
                         VerticalAlignment="Center"
-                        HorizontalAlignment="Left">
-                    <Path Classes="Glyph GlyphMd" Data="{StaticResource history}" />
+                        HorizontalAlignment="Left"
+                        ToolTip.Tip="Progresso">
+                    <Path Classes="Glyph GlyphMd" Data="{StaticResource calendar-check}" />
                     <Button.Flyout>
                         <Flyout
                                 Placement="TopEdgeAlignedLeft"

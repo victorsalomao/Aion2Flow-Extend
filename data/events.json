@@ -1,0 +1,7 @@
+{
+  "events": [
+    { "id": "nahma", "name": "Guardian Lord Nahma (Abismo Inferior/Médio)", "days": ["Friday","Sunday"], "times": ["21:00"], "durationMinutes": 30 },
+    { "id": "abyss-executors", "name": "Executores do Abismo (Tamasa/Kaira/Argo, Ducal/Marakha/Dramos)", "days": ["Monday","Thursday","Saturday"], "times": ["21:30"], "durationMinutes": 30 },
+    { "id": "watcher-kaira", "name": "Watcher Kaira (a cada 3h)", "days": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"], "times": ["0:00","3:00","6:00","9:00","12:00","15:00","18:00","21:00"], "durationMinutes": 15 }
+  ]
+}

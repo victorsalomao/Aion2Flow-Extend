@@ -1,27 +1,137 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Cloris.Aion2Flow.ViewModels.Progress"
+             xmlns:dom="using:Cloris.Aion2Flow.Domain.Progress"
              x:Class="Cloris.Aion2Flow.Views.Progress.ProgressTabsView"
              x:DataType="vm:ProgressTabsViewModel">
-    <TabControl ItemsSource="{Binding Tabs}" SelectedItem="{Binding SelectedTab}">
-        <TabControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:ProgressTabViewModel">
-                <TextBlock Text="{Binding Header}" />
-            </DataTemplate>
-        </TabControl.ItemTemplate>
-        <TabControl.ContentTemplate>
-            <DataTemplate x:DataType="vm:ProgressTabViewModel">
-                <ItemsControl ItemsSource="{Binding Items}">
+    <DockPanel MinWidth="320">
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,6" DataContext="{Binding Alts}" x:DataType="vm:AltsViewModel">
+            <ComboBox HorizontalAlignment="Stretch"
+                      ItemsSource="{Binding Alts}"
+                      SelectedItem="{Binding SelectedAlt}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="dom:Alt">
+                        <TextBlock Text="{Binding Name}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="4">
+                <TextBox Text="{Binding EditName}" PlaceholderText="Nome do alt" />
+                <Button Grid.Column="1" Content="Adicionar" Command="{Binding AddCommand}" />
+                <Button Grid.Column="2" Content="Renomear" Command="{Binding RenameCommand}" />
+                <Button Grid.Column="3" Content="Remover" Command="{Binding RemoveCommand}" />
+            </Grid>
+        </StackPanel>
+
+        <TabControl>
+            <TabItem Header="Hoje">
+                <StackPanel Spacing="4" DataContext="{Binding Daily}" x:DataType="vm:ChecklistViewModel">
+                    <TextBlock Text="{Binding NextResetText}" />
+                    <TextBlock Text="{Binding Summary}" />
+                    <ItemsControl ItemsSource="{Binding Items}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ChecklistRowViewModel">
+                                <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+                                    <CheckBox IsChecked="{Binding IsDone, Mode=OneWay}" Command="{Binding ToggleCommand}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Progress}" VerticalAlignment="Center" />
+                                    <Button Grid.Column="3" Content="+1" Command="{Binding IncrementCommand}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Semana">
+                <StackPanel Spacing="4" DataContext="{Binding Weekly}" x:DataType="vm:ChecklistViewModel">
+                    <TextBlock Text="{Binding NextResetText}" />
+                    <TextBlock Text="{Binding Summary}" />
+                    <ItemsControl ItemsSource="{Binding Items}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ChecklistRowViewModel">
+                                <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+                                    <CheckBox IsChecked="{Binding IsDone, Mode=OneWay}" Command="{Binding ToggleCommand}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Progress}" VerticalAlignment="Center" />
+                                    <Button Grid.Column="3" Content="+1" Command="{Binding IncrementCommand}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Campos">
+                <ItemsControl DataContext="{Binding Fields}" x:DataType="vm:ManualFieldsViewModel" ItemsSource="{Binding Rows}">
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:ProgressItemViewModel">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="{Binding Title}" />
-                                <TextBlock Text="{Binding Value}" />
-                            </StackPanel>
+                        <DataTemplate x:DataType="vm:ManualFieldRowViewModel">
+                            <Grid ColumnDefinitions="140,120,Auto,Auto" ColumnSpacing="8" Margin="0,2">
+                                <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                                <TextBox Grid.Column="1" Text="{Binding InputText}" />
+                                <Button Grid.Column="2" Content="Salvar" Command="{Binding ApplyCommand}" />
+                                <TextBlock Grid.Column="3" Text="{Binding DeltaText}" VerticalAlignment="Center" />
+                            </Grid>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-            </DataTemplate>
-        </TabControl.ContentTemplate>
-    </TabControl>
+            </TabItem>
+
+            <TabItem Header="Resina">
+                <StackPanel Spacing="4" DataContext="{Binding Resin}" x:DataType="vm:ResinViewModel">
+                    <TextBlock Text="{Binding ProjectedText}" FontSize="20" />
+                    <TextBlock Text="{Binding FullInText}" />
+                    <Grid ColumnDefinitions="Auto,100" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="4">
+                        <TextBlock Text="Atual" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1" Text="{Binding CurrentInput}" />
+                        <TextBlock Grid.Row="1" Text="Máximo" VerticalAlignment="Center" />
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding MaxInput}" />
+                        <TextBlock Grid.Row="2" Text="Pontos por recarga" VerticalAlignment="Center" />
+                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PointsInput}" />
+                        <TextBlock Grid.Row="3" Text="Recarga a cada (min)" VerticalAlignment="Center" />
+                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding IntervalInput}" />
+                    </Grid>
+                    <CheckBox Content="Tenho assinatura" IsChecked="{Binding IsSubscribed}" />
+                    <Button Content="Salvar" Command="{Binding SaveCommand}" />
+                    <Border IsVisible="{Binding Notice, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Padding="6">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{Binding Notice}" FontWeight="Bold" VerticalAlignment="Center" />
+                            <Button Content="OK" Command="{Binding DismissNoticeCommand}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Timers">
+                <StackPanel Spacing="4" DataContext="{Binding Timers}" x:DataType="vm:EventTimersViewModel">
+                    <TextBlock Text="{Binding Warning}" FontWeight="Bold"
+                               IsVisible="{Binding Warning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    <ItemsControl ItemsSource="{Binding Rows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:EventTimerRowViewModel">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{Binding Name}" MinWidth="130" />
+                                    <TextBlock Text="{Binding Status}" />
+                                    <TextBlock Text="{Binding Countdown}" FontWeight="Bold" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Temporada">
+                <StackPanel Spacing="4" DataContext="{Binding Season}" x:DataType="vm:SeasonViewModel">
+                    <Grid ColumnDefinitions="Auto,140" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="4">
+                        <TextBlock Text="Meta (pontos)" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1" Text="{Binding TargetInput}" />
+                        <TextBlock Grid.Row="1" Text="Fim (AAAA-MM-DD)" VerticalAlignment="Center" />
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EndInput}" />
+                    </Grid>
+                    <Button Content="Calcular" Command="{Binding SaveCommand}" />
+                    <TextBlock Text="{Binding Result}" TextWrapping="Wrap" />
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
 </UserControl>

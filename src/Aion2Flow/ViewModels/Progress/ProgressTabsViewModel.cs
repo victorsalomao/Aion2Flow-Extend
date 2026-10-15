@@ -1,40 +1,91 @@
-using System.Collections.ObjectModel;
-
+using Cloris.Aion2Flow.Services.Logging;
+using Cloris.Aion2Flow.Domain.Progress;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Cloris.Aion2Flow.ViewModels.Progress;
 
-public sealed record ProgressItemViewModel(string Title, string Value);
-
-public sealed class ProgressTabViewModel(string header, IReadOnlyList<ProgressItemViewModel> items)
+/// <summary>Painel de progresso (Hoje/Semana/Alts/Recursos/Timers/Temporada). Criado ao abrir o flyout e descartado ao fechar.</summary>
+public sealed class ProgressTabsViewModel : ObservableObject, IDisposable
 {
-    public string Header { get; } = header;
-    public IReadOnlyList<ProgressItemViewModel> Items { get; } = items;
-}
+    private bool _disposed;
 
-/// <summary>Casca das abas Overlay/Hoje/Semana/Alts/Timers com dados fake (sem banco).</summary>
-public sealed class ProgressTabsViewModel : FrameBatchedObservableObject
-{
-    private ProgressTabViewModel _selectedTab;
-
-    public ProgressTabsViewModel(UiFrameBatchService frameBatchService) : base(frameBatchService)
+    public ProgressTabsViewModel(
+        IAltRepository altRepository,
+        IChecklistService checklistService,
+        IResetClock clock,
+        IManualFieldRepository fieldRepository,
+        ManualFieldService fieldService,
+        IResourceRepository resourceRepository,
+        IEventTimerService timerService)
     {
-        Tabs =
-        [
-            new("Overlay", [new("DPS", "0"), new("Tempo", "00:00")]),
-            new("Hoje", [new("Diária 1", "0/1"), new("Diária 2", "0/1")]),
-            new("Semana", [new("Semanal 1", "0/3")]),
-            new("Alts", [new("Personagem principal", "-")]),
-            new("Timers", [new("Reset diário", "--:--:--")]),
-        ];
-        _selectedTab = Tabs[0];
+        Alts = new AltsViewModel(altRepository);
+        Daily = new ChecklistViewModel(checklistService, clock, TaskCadence.Daily);
+        Weekly = new ChecklistViewModel(checklistService, clock, TaskCadence.Weekly);
+        Fields = new ManualFieldsViewModel(fieldRepository, fieldService, clock);
+        Resin = new ResinViewModel(resourceRepository, fieldRepository, fieldService);
+        Timers = new EventTimersViewModel(timerService);
+        Season = new SeasonViewModel(fieldRepository, fieldService);
+        Alts.SelectionChanged += OnAltSelected;
+        Fields.Changed += OnFieldsChanged;
     }
 
-    public ObservableCollection<ProgressTabViewModel> Tabs { get; }
+    public AltsViewModel Alts { get; }
+    public ChecklistViewModel Daily { get; }
+    public ChecklistViewModel Weekly { get; }
+    public ManualFieldsViewModel Fields { get; }
+    public ResinViewModel Resin { get; }
+    public EventTimersViewModel Timers { get; }
+    public SeasonViewModel Season { get; }
 
-
-    public ProgressTabViewModel SelectedTab
+    public async Task InitializeAsync()
     {
-        get => _selectedTab;
-        set => SetFrameProperty(ref _selectedTab, value);
+        Timers.Tick();
+        await Alts.LoadAsync();
+    }
+
+    /// <summary>Chamado pelo DispatcherTimer de 1 s da view (ativo apenas com o painel visivel).</summary>
+    public void Tick()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        Daily.Tick();
+        Weekly.Tick();
+        Resin.Tick();
+        Timers.Tick();
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        Alts.SelectionChanged -= OnAltSelected;
+        Fields.Changed -= OnFieldsChanged;
+    }
+
+    private async void OnAltSelected(Alt? alt)
+    {
+        try
+        {
+            await Task.WhenAll(Daily.LoadAsync(alt), Weekly.LoadAsync(alt), Fields.LoadAsync(alt), Resin.LoadAsync(alt));
+            await Season.LoadAsync(alt);
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            AppLog.Write(AppLogLevel.Warning, $"[Progress] falha ao carregar alt: {ex.Message}");
+        }
+    }
+
+    private async void OnFieldsChanged()
+    {
+        try
+        {
+            await Season.RefreshAsync();
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            AppLog.Write(AppLogLevel.Warning, $"[Progress] falha ao atualizar temporada: {ex.Message}");
+        }
     }
 }

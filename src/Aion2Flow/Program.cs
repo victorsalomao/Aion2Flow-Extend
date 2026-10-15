@@ -7,6 +7,7 @@ using Cloris.Aion2Flow.Capture;
 using Cloris.Aion2Flow.Capture.Diagnostics;
 using Cloris.Aion2Flow.Controls;
 using Cloris.Aion2Flow.Presentation;
+using Cloris.Aion2Flow.Persistence;
 using Cloris.Aion2Flow.SceneRuntime.Archive;
 using Cloris.Aion2Flow.SceneRuntime.Playback;
 using Cloris.Aion2Flow.Services;
@@ -68,6 +69,12 @@ internal static class Program
         WinDivertRuntime.Initialize();
         RawPacketDump.ConfigureLogDirectory(LogDirectoryResolver.GetDefaultLogDirectory());
 
+        // Progresso (alts/checklist/timers). Regiao padrao KR ate existir opcao em Settings.
+        services.AddProgressDomain(
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Aion2Flow", "progress.db"),
+            Path.Combine(AppContext.BaseDirectory, "data"),
+            Cloris.Aion2Flow.Domain.Progress.ServerRegion.KR);
+
         services.AddSingleton<SettingsService>();
         services.AddSingleton<App>();
         services.AddSingleton<LanguageService>();
@@ -88,6 +95,9 @@ internal static class Program
         services.AddSingleton<OverlayInteractionController>();
         services.AddSingleton<SettingsFlyoutViewModel>();
         services.AddTransient<Cloris.Aion2Flow.ViewModels.Progress.ProgressTabsViewModel>();
+        services.AddSingleton(static sp => new Cloris.Aion2Flow.Domain.Progress.ManualFieldService(sp.GetRequiredService<Cloris.Aion2Flow.Domain.Progress.IManualFieldRepository>(), sp.GetRequiredService<Cloris.Aion2Flow.Domain.Progress.IResetClock>()));
+        services.AddSingleton<Cloris.Aion2Flow.Services.Reminders.AlertToastService>();
+        services.AddSingleton<Cloris.Aion2Flow.Services.Reminders.ProgressReminderService>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainAppWindow>();
 
@@ -163,11 +173,13 @@ file sealed class App(IServiceProvider serviceProvider) : Application
         }
 
         Task.Run(() => serviceProvider.GetRequiredService<AppUpdateService>().Start());
+        serviceProvider.GetRequiredService<Cloris.Aion2Flow.Services.Reminders.ProgressReminderService>().Start();
         base.OnFrameworkInitializationCompleted();
     }
 
     private void OnDesktopExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
     {
         serviceProvider.GetRequiredService<AppUpdateService>()?.PreparePendingUpdateForShutdown();
+        serviceProvider.GetRequiredService<Cloris.Aion2Flow.Services.Reminders.ProgressReminderService>().Dispose();
     }
 }
