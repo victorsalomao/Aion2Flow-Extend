@@ -50,3 +50,26 @@ Ganho = estimativa a partir do heap pos-GC (187 MB/10 lutas, ~19 MB por luta no 
 2. T2.7/H7 (ring buffer nos change logs/mechanic events) - ganho pequeno e barato.
 3. Descartar/rebaixar T2.4 (H3) e T2.6 (H6): ja sao lazy; manter apenas se medir ganho no app real.
 4. Antes: obter medicao do app completo (RAM idle, CPU em luta, H4/H5) em maquina com WinDivert/admin, e gcdump de um .NET 11 ou via `DOTNET_gcServer=0` com heap menor para validar a atribuicao de H1.
+
+## T2.3 - Archive em disco comprimido (2026-10-14)
+Mudanca: `EncounterArchiveService` (LiteMode) grava os arrays de eventos de cada luta (`CombatEventRecord`, `CombatMechanicEventRecord`, `CombatResourceEventRecord`) em arquivo Brotli (Fastest) em `%TEMP%/Aion2Flow/archive/<guid>/` e os remove da RAM; `SceneArchivePayload.CreateDetailDelta` recarrega sob demanda (sem cache). Arquivo e apagado ao sair do historico (10 lutas); pastas > 12 h sao limpas na inicializacao. Fica em RAM: snapshot, resumo (pares/combatentes), indice de detalhe, `TimelineSegment` (Journal = T2.2). Round-trip: `Archive_Spill_RoundTrips_Detail_And_Deletes_File_On_Eviction`.
+Bench: `tools/bench.ps1 -Scenario archive-ram|archive-spill -Fights 10 -Runs 2` (10 maiores logs, so o historico de arquivos e retido; resultados do replay descartados). Variacao entre runs < 1% (memoria).
+
+| Cenario (10 lutas) | WS pos-GC (MB) | WS pico (MB) | Heap pos-GC (MB) | CPU medio (replay max. velocidade) | Disco |
+|---|---|---|---|---|---|
+| archive-ram (antes, LiteMode off) | 256,0 | 261,6 | 134,7 | 74-82% | 0 |
+| archive-spill (depois, LiteMode on) | 217,2 | 241,4 | 97,7 | 84-89% (gravacao Brotli + variacao entre runs ~10%) | ~12 MB |
+
+Ganho: -37 MB de heap (-27%) e -39 MB de WS; por luta ~3,7 MB, mas a RAM por luta ainda cresce ~9,8 MB: o residual e o Journal retido via `TimelineSegment` (T2.2) e o indice de ordinais por combatente (~2x8 bytes por evento, candidato a spill tambem). Private Bytes e idle/5 min nao medidos (harness sem UI). Custo de CPU: compressao ocorre uma vez por luta arquivada (fora do caminho de pacotes); carga so ao abrir detalhes.
+
+## T2.2 - Journal -> agregados incrementais (LiteMode)
+Mudanca: `ObservedEventJournal.DiscardConsumed` + `TrimBefore(ordinal)` (libera segmentos ja projetados); `SceneReadModelOwner.RefreshCore` chama o trim; `SceneLiveReadModel(..., liteMode)` liga a flag (ligada ao `AppSettings.LiteMode` em `Program.cs`/`WinDivertCaptureService`). Limitacao: playback bruto de faixas ja descartadas fica indisponivel em LiteMode (escopo de T2.4/T2.3). Bench com refresh simulado a cada 1024 linhas (cadencia da UI) nos dois modos; `tools/bench.ps1 -Lite`.
+Teste de paridade: `LiteModeJournalParityTests` (25 logs, DPS/dano/cura/hits identicos full x lite, journal menor em lite).
+
+| Cenario (core sem UI, 2 runs) | WS pos-GC MB | Heap pos-GC MB | CPU ms (wall ms) |
+|---|---|---|---|
+| idle | 25,3 -> 25,3 | 0,3 -> 0,3 | n/a |
+| fights10 antes (journal completo) | 249,5 | 187,0 | 4969-5281 (6627-6963) |
+| fights10 depois (LiteMode) | 170,6 | 78,3 | 4672-5188 (5145-5713) |
+
+Ganho: -79 MB WS (-32%), -109 MB heap (-58%), CPU nao subiu (wall -20%). Residual 78 MB = archives (T2.3) + change logs (T2.7). Private Bytes e "5 min"/CPU de UI nao medidos (harness sem UI).

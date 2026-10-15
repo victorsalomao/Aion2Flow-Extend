@@ -7,9 +7,10 @@
            Saida: tabela + tools/bench-out/bench-<scenario>-<timestamp>.csv
 #>
 param(
-    [ValidateSet('idle', 'fights', 'session')][string]$Scenario = 'idle',
+    [ValidateSet('idle', 'fights', 'session', 'archive-ram', 'archive-spill')][string]$Scenario = 'idle',
     [int]$Fights = 10,
     [int]$Runs = 2,
+    [switch]$Lite,
     [int]$HoldSeconds = 0   # mantem o processo vivo para dotnet-gcdump/dotnet-counters (pid em %TEMP%\benchharness.pid)
 )
 $ErrorActionPreference = 'Stop'
@@ -22,15 +23,16 @@ if ($LASTEXITCODE) { throw 'build falhou' }
 $fix = "$root/tests/Aion2Flow.ReplayTests/Fixtures/logs"
 if ($Scenario -eq 'session') { $Fights = 5 }
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+$env:BENCH_LITE = if ($Lite) { '1' } else { '0' }
 $rows = @()
 for ($i = 1; $i -le $Runs; $i++) {
-    $mode = if ($Scenario -eq 'idle') { 'idle' } else { 'fights' }
+    $mode = if ($Scenario -eq 'idle') { 'idle' } elseif ($Scenario -like 'archive*') { $Scenario } else { 'fights' }
     $line = & dotnet "$bin/BenchHarness.dll" $mode $fix $Fights $HoldSeconds
     $kv = [ordered]@{ run = $i }
     foreach ($p in ($line -split ',')) { $k, $v = $p -split '=', 2; $kv[$k] = $v }
     $rows += [pscustomobject]$kv
 }
-$csv = Join-Path $out "bench-$Scenario-$stamp.csv"
+$csv = Join-Path $out "bench-$Scenario$(if ($Lite) { "-lite" })-$stamp.csv"
 $rows | Export-Csv $csv -NoTypeInformation
 $rows | Format-Table -AutoSize
 foreach ($m in 'ws_after_gc_mb', 'ws_peak_mb', 'cpu_pct', 'startup_ms') {

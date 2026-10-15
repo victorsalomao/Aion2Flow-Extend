@@ -341,6 +341,8 @@ public sealed class SceneReadModelOwner(
             _cursor = result.Cursor;
         }
 
+        journal.TrimBefore(_cursor.NextObservationOrdinal);
+
         if (!completeFlushes)
             return;
 

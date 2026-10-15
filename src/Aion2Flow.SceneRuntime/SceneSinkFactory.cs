@@ -106,7 +106,8 @@ public sealed class SceneLiveReadModel : ILiveSceneCollectionPolicy
         DateTimeOffset sessionStarted,
         TimeProvider timeProvider,
         ICombatOccurrenceObserver? combatOccurrenceObserver,
-        IAuraLifecycleObserver? auraLifecycleObserver)
+        IAuraLifecycleObserver? auraLifecycleObserver,
+        bool liteMode = false)
     {
         _timeProvider = timeProvider;
         _combatOccurrenceObserver = combatOccurrenceObserver;
@@ -114,7 +115,7 @@ public sealed class SceneLiveReadModel : ILiveSceneCollectionPolicy
         SessionId = Guid.NewGuid();
         SessionStarted = sessionStarted;
         Clock = new SceneRuntimeClock(sessionStarted.ToUnixTimeMilliseconds());
-        Journal = new ObservedEventJournal(LiveJournalInitialCapacity);
+        Journal = new ObservedEventJournal(LiveJournalInitialCapacity) { DiscardConsumed = liteMode == true };
         _owner = CreateOwner(SessionId, sessionStarted, Journal.FirstObservationOrdinal);
         _kind = SceneKind.Standard;
         _bossState = BossSceneState.Waiting;

@@ -16,6 +16,9 @@ namespace Cloris.Aion2Flow.Capture.Diagnostics;
 
 public sealed class PacketLogReplayService
 {
+    public static PacketLogReplayResult Replay(string path, bool liteMode)
+        => ReplayFile(path, CancellationToken.None, null, null, liteMode);
+
     public static PacketLogReplayResult Replay(string path)
         => ReplayFile(path, CancellationToken.None, null, null);
 
@@ -34,12 +37,12 @@ public sealed class PacketLogReplayService
     public static PacketLogReplayResult ReplayCancellable(string path, CancellationToken cancellationToken)
         => ReplayFile(path, cancellationToken, null, null);
 
-    private static PacketLogReplayResult ReplayFile(string path, CancellationToken cancellationToken, ICombatOccurrenceObserver? combatOccurrenceObserver, IAuraLifecycleObserver? auraLifecycleObserver)
+    private static PacketLogReplayResult ReplayFile(string path, CancellationToken cancellationToken, ICombatOccurrenceObserver? combatOccurrenceObserver, IAuraLifecycleObserver? auraLifecycleObserver, bool? liteMode = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
         using var reader = File.OpenText(path);
-        return ReplayCore(reader, path, cancellationToken, combatOccurrenceObserver, auraLifecycleObserver);
+        return ReplayCore(reader, path, cancellationToken, combatOccurrenceObserver, auraLifecycleObserver, liteMode);
     }
 
     public static IReadOnlyList<PacketLogReplayResult> ReplayMany(IEnumerable<string> paths)
@@ -56,7 +59,7 @@ public sealed class PacketLogReplayService
     public static PacketLogReplayResult Replay(TextReader reader, string sourceName)
         => ReplayCore(reader, sourceName, CancellationToken.None, null, null);
 
-    private static PacketLogReplayResult ReplayCore(TextReader reader, string sourceName, CancellationToken cancellationToken, ICombatOccurrenceObserver? combatOccurrenceObserver, IAuraLifecycleObserver? auraLifecycleObserver)
+    private static PacketLogReplayResult ReplayCore(TextReader reader, string sourceName, CancellationToken cancellationToken, ICombatOccurrenceObserver? combatOccurrenceObserver, IAuraLifecycleObserver? auraLifecycleObserver, bool? liteMode = null)
     {
         ArgumentNullException.ThrowIfNull(reader);
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceName);
@@ -66,7 +69,8 @@ public sealed class PacketLogReplayService
             sourceName,
             cancellationToken,
             combatOccurrenceObserver,
-            auraLifecycleObserver);
+            auraLifecycleObserver,
+            liteMode);
     }
 
     private static IEnumerable<string> ReadLines(TextReader reader, CancellationToken cancellationToken)
@@ -78,7 +82,7 @@ public sealed class PacketLogReplayService
         }
     }
 
-    private static PacketLogReplayResult ReplayStreamLines(IEnumerable<string> lines, string sourceName, CancellationToken cancellationToken, ICombatOccurrenceObserver? combatOccurrenceObserver, IAuraLifecycleObserver? auraLifecycleObserver)
+    private static PacketLogReplayResult ReplayStreamLines(IEnumerable<string> lines, string sourceName, CancellationToken cancellationToken, ICombatOccurrenceObserver? combatOccurrenceObserver, IAuraLifecycleObserver? auraLifecycleObserver, bool? liteMode = null)
     {
         var sceneStarted = DateTimeOffset.UtcNow;
         var replayTimeProvider = new ReplayTimeProvider(sceneStarted);
@@ -86,7 +90,8 @@ public sealed class PacketLogReplayService
             sceneStarted,
             replayTimeProvider,
             combatOccurrenceObserver,
-            auraLifecycleObserver);
+            auraLifecycleObserver,
+            liteMode == true);
         var journal = scene.Journal;
         var sinkFactory = SceneSinkFactory.CreateForLive(scene);
         var replayedEventCounts = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -111,6 +116,8 @@ public sealed class PacketLogReplayService
             }
 
             replayTimeProvider.SetUtcNow(entry.Timestamp);
+            if (liteMode.HasValue && (totalLines & 1023) == 0)
+                scene.Owner.Refresh(); // simulates the UI refresh cadence so LiteMode can trim consumed segments
             if (string.Equals(entry.Direction, "outbound", StringComparison.OrdinalIgnoreCase))
             {
                 IncrementCount(skippedEventCounts, "outbound-ignored");

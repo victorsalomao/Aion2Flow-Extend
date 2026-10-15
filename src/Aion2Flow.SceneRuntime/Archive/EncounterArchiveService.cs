@@ -11,6 +11,21 @@ public sealed class EncounterArchiveService
     private readonly List<ArchivedEncounterRecord> _history = [];
     private readonly Dictionary<Guid, ArchivedEncounterRecord> _historyByEncounterId = [];
     private ImmutableArray<ArchivedEncounterRecord> _historySnapshot = [];
+    private readonly Func<bool>? _spillEnabled;
+    private readonly string? _spillDirectory;
+
+    public EncounterArchiveService()
+    {
+    }
+
+    /// <param name="spillEnabled">Evaluated per archive (LiteMode flag).</param>
+    /// <param name="spillBaseDirectory">Base folder; a per-instance subfolder is created lazily. Defaults to the temp folder.</param>
+    public EncounterArchiveService(Func<bool> spillEnabled, string? spillBaseDirectory = null)
+    {
+        _spillEnabled = spillEnabled;
+        _spillDirectory = Path.Combine(spillBaseDirectory ?? Path.Combine(Path.GetTempPath(), "Aion2Flow", "archive"), Guid.NewGuid().ToString("N"));
+        CleanStaleDirectories(Path.GetDirectoryName(_spillDirectory)!);
+    }
 
     public event EventHandler? HistoryChanged;
 
@@ -31,6 +46,7 @@ public sealed class EncounterArchiveService
 
         ArchivedEncounterRecord? record;
         bool historyChanged;
+        List<ArchivedEncounterRecord>? evicted = null;
         lock (_lock)
         {
             if (_history.Count > 0 && IsEquivalent(_history[0].ScenePayload.Snapshot, archivedSnapshot))
@@ -52,6 +68,7 @@ public sealed class EncounterArchiveService
             {
                 for (var i = MaxHistoryCount; i < _history.Count; i++)
                 {
+                    (evicted ??= []).Add(_history[i]);
                     _historyByEncounterId.Remove(_history[i].ScenePayload.Snapshot.EncounterId);
                 }
 
@@ -60,6 +77,15 @@ public sealed class EncounterArchiveService
 
             _historySnapshot = [.. _history];
             historyChanged = true;
+        }
+
+        if (_spillEnabled?.Invoke() == true && _spillDirectory is not null)
+            record.ScenePayload.TrySpill(Path.Combine(_spillDirectory, record.Id.ToString("N") + ".asf"));
+
+        if (evicted is not null)
+        {
+            foreach (var old in evicted)
+                old.ScenePayload.DeleteSpill();
         }
 
         if (historyChanged)
@@ -75,6 +101,25 @@ public sealed class EncounterArchiveService
         lock (_lock)
         {
             return _historyByEncounterId.TryGetValue(encounterId, out record);
+        }
+    }
+
+    private static void CleanStaleDirectories(string root)
+    {
+        try
+        {
+            if (!Directory.Exists(root))
+                return;
+
+            var cutoff = DateTime.UtcNow.AddHours(-12);
+            foreach (var dir in Directory.EnumerateDirectories(root))
+            {
+                if (Directory.GetLastWriteTimeUtc(dir) < cutoff)
+                    Directory.Delete(dir, true);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
         }
     }
 

@@ -5,13 +5,13 @@ using Cloris.Aion2Flow.SceneRuntime.Observation;
 
 namespace Cloris.Aion2Flow.SceneRuntime.Stores;
 
-public sealed class ResourceStore(int eventCapacity = 0, int pairCapacity = 0, int combatantCapacity = 0) : ISnapshotChangeFeed<CombatSnapshotChange>
+public sealed class ResourceStore(int eventCapacity = 0, int pairCapacity = 0, int combatantCapacity = 0, int changeLogLimit = 0) : ISnapshotChangeFeed<CombatSnapshotChange>
 {
     private readonly List<CombatResourceEventRecord> _events = eventCapacity > 0 ? new List<CombatResourceEventRecord>(eventCapacity) : [];
     private readonly Dictionary<(int Source, int Target), CombatResourcePairRecord> _pairs = pairCapacity > 0 ? new Dictionary<(int, int), CombatResourcePairRecord>(pairCapacity) : [];
     private readonly Dictionary<int, HashSet<(int Source, int Target)>> _outgoingBySource = combatantCapacity > 0 ? new(combatantCapacity) : [];
     private readonly Dictionary<int, HashSet<(int Source, int Target)>> _incomingByTarget = combatantCapacity > 0 ? new(combatantCapacity) : [];
-    private readonly List<CombatSnapshotChange> _changeLog = eventCapacity > 0 ? new(eventCapacity) : [];
+    private readonly ChangeRingBuffer<CombatSnapshotChange> _changeLog = new(eventCapacity > 0 ? eventCapacity : 0, changeLogLimit);
     private readonly Dictionary<int, long> _detailRevisionByCombatant = combatantCapacity > 0 ? new(combatantCapacity) : [];
     private long _revision;
 

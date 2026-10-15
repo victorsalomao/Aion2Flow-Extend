@@ -104,6 +104,7 @@ public sealed class SettingsService
         BattleResetHotkeyVirtualKey = source.BattleResetHotkeyVirtualKey,
         OverlayInteractionHotkeyModifiers = source.OverlayInteractionHotkeyModifiers,
         OverlayInteractionHotkeyVirtualKey = source.OverlayInteractionHotkeyVirtualKey,
+        LiteMode = source.LiteMode,
         MainWindowPosition = source.MainWindowPosition
     };
 }

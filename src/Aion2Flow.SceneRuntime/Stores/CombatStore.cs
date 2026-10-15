@@ -4,7 +4,7 @@ using Cloris.Aion2Flow.SceneRuntime.Observation;
 
 namespace Cloris.Aion2Flow.SceneRuntime.Stores;
 
-public sealed class CombatStore(int eventCapacity = 0, int combatantCapacity = 0, int pairCapacity = 0) : ISnapshotChangeFeed<CombatSnapshotChange>
+public sealed class CombatStore(int eventCapacity = 0, int combatantCapacity = 0, int pairCapacity = 0, int changeLogLimit = 0) : ISnapshotChangeFeed<CombatSnapshotChange>
 {
     public const long UnknownSourceObservationOrdinal = -1;
 
@@ -13,7 +13,7 @@ public sealed class CombatStore(int eventCapacity = 0, int combatantCapacity = 0
     private readonly Dictionary<int, HashSet<(int, int)>> _outgoingBySource = combatantCapacity > 0 ? new(combatantCapacity) : [];
     private readonly Dictionary<int, HashSet<(int, int)>> _incomingByTarget = combatantCapacity > 0 ? new(combatantCapacity) : [];
     private CombatEventJournal _events = new(eventCapacity);
-    private readonly List<CombatSnapshotChange> _changeLog = eventCapacity > 0 ? new(ResolveChangeCapacity(eventCapacity)) : [];
+    private readonly ChangeRingBuffer<CombatSnapshotChange> _changeLog = new(eventCapacity > 0 ? ResolveChangeCapacity(eventCapacity) : 0, changeLogLimit);
     private readonly Dictionary<int, long> _detailRevisionByCombatant = combatantCapacity > 0 ? new(combatantCapacity) : [];
     private long _revision;
 

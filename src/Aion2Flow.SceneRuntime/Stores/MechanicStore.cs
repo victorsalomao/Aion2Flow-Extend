@@ -5,14 +5,14 @@ using Cloris.Aion2Flow.SceneRuntime.Observation;
 
 namespace Cloris.Aion2Flow.SceneRuntime.Stores;
 
-public sealed class MechanicStore(int eventCapacity = 0, int pairCapacity = 0, int combatantCapacity = 0) : ISnapshotChangeFeed<CombatSnapshotChange>
+public sealed class MechanicStore(int eventCapacity = 0, int pairCapacity = 0, int combatantCapacity = 0, int changeLogLimit = 0) : ISnapshotChangeFeed<CombatSnapshotChange>
 {
     private readonly List<CombatMechanicEventRecord> _events = eventCapacity > 0 ? new List<CombatMechanicEventRecord>(eventCapacity) : [];
     private readonly Dictionary<(int Source, int Target), CombatMechanicPairRecord> _pairs = pairCapacity > 0 ? new Dictionary<(int, int), CombatMechanicPairRecord>(pairCapacity) : [];
     private readonly Dictionary<int, CombatantMechanicRecord> _combatants = combatantCapacity > 0 ? new Dictionary<int, CombatantMechanicRecord>(combatantCapacity) : [];
     private readonly Dictionary<int, HashSet<(int Source, int Target)>> _outgoingBySource = combatantCapacity > 0 ? new(combatantCapacity) : [];
     private readonly Dictionary<int, HashSet<(int Source, int Target)>> _incomingByTarget = combatantCapacity > 0 ? new(combatantCapacity) : [];
-    private readonly List<CombatSnapshotChange> _changeLog = eventCapacity > 0 ? new List<CombatSnapshotChange>(ResolveChangeLogCapacity(eventCapacity)) : [];
+    private readonly ChangeRingBuffer<CombatSnapshotChange> _changeLog = new(eventCapacity > 0 ? ResolveChangeLogCapacity(eventCapacity) : 0, changeLogLimit);
     private readonly Dictionary<int, long> _detailRevisionByCombatant = combatantCapacity > 0 ? new(combatantCapacity) : [];
     private long _revision;
 

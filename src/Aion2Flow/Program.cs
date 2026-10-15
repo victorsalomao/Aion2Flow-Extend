@@ -76,14 +76,14 @@ internal static class Program
         services.AddSingleton<PlayerNameDisplayService>();
         services.AddSingleton<UiScaleService>();
         services.AddSingleton<AppUpdateService>();
-        services.AddSingleton<EncounterArchiveService>();
+        services.AddSingleton(static sp => new EncounterArchiveService(() => sp.GetRequiredService<SettingsService>().Current.LiteMode));
         services.AddSingleton<AvaloniaFrameClockService>();
         services.AddSingleton<UiFrameBatchService>();
         services.AddSingleton<IScenePlaybackTickSourceFactory, AvaloniaScenePlaybackTickSourceFactory>();
         services.AddSingleton<CombatantDetailsFlyoutViewModel>();
         services.AddSingleton<ProcessPortDiscoveryService>();
         services.AddSingleton<ProcessForegroundWatcher>();
-        services.AddSingleton<WinDivertCaptureService>();
+        services.AddSingleton(static sp => new WinDivertCaptureService(sp.GetRequiredService<ProcessPortDiscoveryService>(), sp.GetRequiredService<SettingsService>().Current.LiteMode));
         services.AddSingleton<GlobalHotkeyService>();
         services.AddSingleton<OverlayInteractionController>();
         services.AddSingleton<SettingsFlyoutViewModel>();

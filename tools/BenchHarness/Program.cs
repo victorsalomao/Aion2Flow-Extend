@@ -2,6 +2,7 @@
 // Uso: BenchHarness <idle|fights|session> <fixturesDir> [count] [holdSeconds] [pidFile]
 using System.Diagnostics;using System.Globalization;
 using Cloris.Aion2Flow.Capture.Diagnostics;
+using Cloris.Aion2Flow.SceneRuntime.Archive;
 
 CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 var scenario = args.Length > 0 ? args[0] : "idle";
@@ -26,12 +27,14 @@ var cpu0 = proc.TotalProcessorTime;
 var files = Directory.GetFiles(dir, "*.log").OrderByDescending(f => new FileInfo(f).Length).Take(count).ToArray();
 var (wsIdle, heapIdle) = Snap(true);
 var lines = 0L;
+var archive = scenario.StartsWith("archive") ? new EncounterArchiveService(() => scenario == "archive-spill") : null;
 if (scenario != "idle")
 {
     foreach (var f in files)
     {
-        var r = PacketLogReplayService.Replay(f);
-        results.Add(r);
+        var r = PacketLogReplayService.Replay(f, Environment.GetEnvironmentVariable("BENCH_LITE") == "1");
+        if (scenario.StartsWith("archive")) { archive!.Archive(r.SceneOwner.CreateArchivePayload(), "bench", false); }
+        else results.Add(r);
         lines += r.TotalLines;
         wsSamples.Add(Snap(false).ws);
     }
@@ -48,7 +51,7 @@ if (hold > 0)
     Console.Error.WriteLine($"HOLD pid={Environment.ProcessId}");
     Thread.Sleep(hold * 1000);
 }
-GC.KeepAlive(results);
+GC.KeepAlive(results); GC.KeepAlive(archive);
 Console.WriteLine($"scenario={scenario},fights={files.Length},lines={lines},startup_ms={startMs:F0},ws_idle_mb={wsIdle},heap_idle_mb={heapIdle},ws_peak_mb={peakWs},ws_after_gc_mb={wsAfter},heap_after_gc_mb={heapAfter},cpu_ms={cpuMs:F0},wall_ms={wallMs:F0},cpu_pct={(wallMs > 0 ? cpuMs / wallMs * 100 : 0):F1},gen0={GC.CollectionCount(0)},gen1={GC.CollectionCount(1)},gen2={GC.CollectionCount(2)},alloc_mb={Mb(GC.GetTotalAllocatedBytes())}");
 
 

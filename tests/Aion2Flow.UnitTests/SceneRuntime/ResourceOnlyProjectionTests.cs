@@ -150,7 +150,7 @@ public sealed class ResourceOnlyProjectionTests
         Assert.Equal(0, pair.HitCount);
         Assert.Equal(4_002, pair.LastSkillCode);
         Assert.Equal(2, restored.ScenePayload.Combatants.Count);
-        Assert.Equal(2, restored.ScenePayload.ResourceEvents.Count);
+        Assert.Equal(2, restored.ScenePayload.ResourceEventCount);
 
         var sourceDetail = restored.ScenePayload.CreateDetailDelta(sourceId);
         var targetDetail = restored.ScenePayload.CreateDetailDelta(targetId);

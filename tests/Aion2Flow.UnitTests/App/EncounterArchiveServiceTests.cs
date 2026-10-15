@@ -39,6 +39,54 @@ public sealed class EncounterArchiveServiceTests
     }
 
     [Fact]
+    public void Archive_Spill_RoundTrips_Detail_And_Deletes_File_On_Eviction()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "aion2-spill-test-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var service = new EncounterArchiveService(static () => true, dir);
+            const int playerId = 100;
+            const int bossId = 200;
+            var owner = CreateSceneOwner(playerId, bossId);
+            var expected = owner.CreateArchivePayload().CreateDetailDelta(playerId);
+            var payload = owner.CreateArchivePayload();
+
+            var record = service.Archive(payload, "manual", isAutomatic: false);
+
+            Assert.NotNull(record);
+            Assert.True(payload.IsSpilled);
+            Assert.Single(Directory.GetFiles(dir, "*.asf", SearchOption.AllDirectories));
+            var actual = payload.CreateDetailDelta(playerId);
+            Assert.Equal(expected.Revision, actual.Revision);
+            Assert.Equal(expected.MetricEvents.Count, actual.MetricEvents.Count);
+            for (var i = 0; i < expected.MetricEvents.Count; i++)
+            {
+                Assert.Equal(expected.MetricEvents[i].Amount, actual.MetricEvents[i].Amount);
+                Assert.Equal(expected.MetricEvents[i].SourceId, actual.MetricEvents[i].SourceId);
+                Assert.Equal(expected.MetricEvents[i].Revision, actual.MetricEvents[i].Revision);
+            }
+
+            Assert.Equal(expected.MechanicEvents.Count, actual.MechanicEvents.Count);
+            Assert.Equal(expected.Combatant!.Value.OutgoingDamage, actual.Combatant!.Value.OutgoingDamage);
+            Assert.Equal(2, payload.CombatEventCount);
+
+            for (var i = 1; i <= EncounterArchiveService.MaxHistoryCount; i++)
+            {
+                var next = CreateSceneOwner(i + 1000, 20_000 + i, DateTimeOffset.FromUnixTimeMilliseconds(5_000 + i).ToLocalTime());
+                Assert.NotNull(service.Archive(next.CreateArchivePayload(), "manual", isAutomatic: false));
+            }
+
+            Assert.Equal(EncounterArchiveService.MaxHistoryCount, Directory.GetFiles(dir, "*.asf", SearchOption.AllDirectories).Length);
+            Assert.Empty(payload.CreateDetailDelta(playerId).MetricEvents);
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
     public void Archive_Skips_Equivalent_Immediate_Duplicates()
     {
         var service = new EncounterArchiveService();
@@ -109,7 +157,7 @@ public sealed class EncounterArchiveServiceTests
         var timelineCount = 0;
         var timelineRead = payload.TimelineSegment.ReadEntries(payload.TimelineSegment.CreateCursor(), 64, entries => timelineCount = entries.Count);
 
-        Assert.Equal(2, payload.CombatEvents.Count);
+        Assert.Equal(2, payload.CombatEventCount);
         Assert.Equal(8, timelineCount);
         Assert.Equal(8, timelineRead.Cursor.NextObservationOrdinal);
         Assert.Equal(playerId, delta.CombatantId);
@@ -233,7 +281,7 @@ public sealed class EncounterArchiveServiceTests
         Assert.Equal(bossId, snapshot.TargetObservation?.InstanceId);
         Assert.True(payload.IdentityScope.TryGetPcMetadata(playerId, out var archivedPc));
         Assert.Equal("Tester", archivedPc.Nickname);
-        Assert.Equal(2, payload.CombatEvents.Count);
+        Assert.Equal(2, payload.CombatEventCount);
         Assert.Equal(2, delta.MetricEvents.Count);
         Assert.Equal(750, delta.MetricEvents[0].Amount);
         Assert.Single(owner.Combat.Events);

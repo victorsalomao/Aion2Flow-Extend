@@ -15,7 +15,7 @@ using Cloris.Aion2Flow.WinDivert.Network;
 
 namespace Cloris.Aion2Flow.Capture;
 
-public sealed class WinDivertCaptureService(ProcessPortDiscoveryService processPortDiscoveryService) : IAsyncDisposable
+public sealed class WinDivertCaptureService(ProcessPortDiscoveryService processPortDiscoveryService, bool liteMode = false) : IAsyncDisposable
 {
     private WinDivertSession? _divert;
     private CancellationTokenSource? _cts;
@@ -28,7 +28,7 @@ public sealed class WinDivertCaptureService(ProcessPortDiscoveryService processP
     private long _nextConnectionOrdinal;
 
     private readonly ProcessPortDiscoveryService _processPortDiscoveryService = processPortDiscoveryService;
-    private readonly SceneLiveReadModel _scene = new(RawPacketDump.CurrentSessionStarted);
+    private readonly SceneLiveReadModel _scene = new(RawPacketDump.CurrentSessionStarted, TimeProvider.System, null, null, liteMode);
     private Func<IRuntimeObservationSink> RuntimeSinkFactory { get => field ??= SceneSinkFactory.CreateForLive(_scene); }
     public PacketCaptureDispatcher Dispatcher
     {

@@ -11,6 +11,9 @@ namespace Cloris.Aion2Flow.SceneRuntime.Archive;
 public sealed class SceneArchivePayload
 {
     private readonly ArchivePayloadIndex _detailIndex;
+    private readonly Lock _spillLock = new();
+    private volatile EventData? _events;
+    private string? _spillPath;
 
     private SceneArchivePayload(
         SceneCombatSnapshot snapshot,
@@ -33,9 +36,9 @@ public sealed class SceneArchivePayload
         Kind = kind;
         SceneStarted = sceneStarted;
         TimelineSegment = timelineSegment;
-        CombatEvents = combatEvents;
-        MechanicEvents = new SnapshotList<CombatMechanicEventRecord>(mechanicEvents);
-        ResourceEvents = new SnapshotList<CombatResourceEventRecord>(resourceEvents);
+        _events = new EventData(combatEvents, mechanicEvents, resourceEvents);
+        CombatEventCount = combatEvents.Count;
+        ResourceEventCount = resourceEvents.Length;
         IdentityScope = identityScope;
         Pairs = new SnapshotList<DirectedPairSnapshot>(pairs);
         Combatants = new SnapshotList<CombatantSummary>(combatants);
@@ -50,9 +53,9 @@ public sealed class SceneArchivePayload
     public SceneKind Kind { get; }
     public DateTimeOffset SceneStarted { get; }
     public SceneJournalSegment TimelineSegment { get; }
-    public CombatEventSegment CombatEvents { get; }
-    public SnapshotList<CombatMechanicEventRecord> MechanicEvents { get; }
-    public SnapshotList<CombatResourceEventRecord> ResourceEvents { get; }
+    public bool IsSpilled => _events is null;
+    public int CombatEventCount { get; }
+    public int ResourceEventCount { get; }
     public SceneIdentityScope IdentityScope { get; }
     public SnapshotList<DirectedPairSnapshot> Pairs { get; }
     public SnapshotList<CombatantSummary> Combatants { get; }
@@ -138,6 +141,9 @@ public sealed class SceneArchivePayload
         }
 
         var detailIndex = DetailIndex;
+        var events = AcquireEvents();
+        if (ReferenceEquals(events, EventData.Empty))
+            return new CombatDetailDelta { CombatantId = combatantId };
         var metricEventOrdinals = detailIndex.GetMetricEventOrdinals(combatantId);
         var mechanicEventIndexes = detailIndex.GetMechanicEventIndexes(combatantId);
         var resourceEventIndexes = detailIndex.GetResourceEventIndexes(combatantId);
@@ -158,7 +164,7 @@ public sealed class SceneArchivePayload
         for (var i = 0; i < metricEventOrdinals.Length; i++)
         {
             var eventOrdinal = metricEventOrdinals[i];
-            ref readonly var record = ref CombatEvents.GetEvent(eventOrdinal);
+            ref readonly var record = ref events.GetCombat(eventOrdinal);
             var sourceId = detailIndex.ResolveMetricSourceId(eventOrdinal, record.SourceId);
             metricEvents[i] = new CombatMetricDetailEvent(
                 CombatDetailFact.Create(
@@ -179,7 +185,7 @@ public sealed class SceneArchivePayload
         for (var i = 0; i < mechanicEventIndexes.Length; i++)
         {
             var eventIndex = mechanicEventIndexes[i];
-            var record = MechanicEvents[eventIndex];
+            var record = events.Mechanic[eventIndex];
             var sourceId = detailIndex.ResolveMechanicSourceId(eventIndex, record.SourceId);
             mechanicEvents[i] = new CombatMechanicDetailEvent(
                 CombatDetailFact.Create(
@@ -200,7 +206,7 @@ public sealed class SceneArchivePayload
         for (var i = 0; i < resourceEventIndexes.Length; i++)
         {
             var eventIndex = resourceEventIndexes[i];
-            var record = ResourceEvents[eventIndex];
+            var record = events.Resource[eventIndex];
             var sourceId = detailIndex.ResolveResourceSourceId(eventIndex, record.SourceId);
             resourceEvents[i] = new CombatResourceDetailEvent(
                 CombatDetailFact.Create(
@@ -227,6 +233,121 @@ public sealed class SceneArchivePayload
             ResourceEvents = resourceEvents,
             Combatant = combatant
         };
+    }
+
+    /// <summary>
+    /// Moves the heavy event arrays to a Brotli-compressed file and drops them from RAM. Idempotent.
+    /// Details are reloaded on demand by <see cref="CreateDetailDelta"/> and not cached.
+    /// </summary>
+    public bool TrySpill(string path)
+    {
+        lock (_spillLock)
+        {
+            var events = _events;
+            if (events is null)
+                return true;
+
+            try
+            {
+                events.WriteTo(path);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return false;
+            }
+
+            _spillPath = path;
+            _events = null;
+            return true;
+        }
+    }
+
+    public void DeleteSpill()
+    {
+        string? path;
+        lock (_spillLock)
+        {
+            path = _spillPath;
+            _spillPath = null;
+        }
+
+        if (path is null)
+            return;
+
+        try
+        {
+            File.Delete(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+        }
+    }
+
+    private EventData AcquireEvents()
+    {
+        var events = _events;
+        if (events is not null)
+            return events;
+
+        var path = _spillPath;
+        if (path is not null && ArchiveSpillFile.TryRead(path, out var start, out var combat, out var mechanic, out var resource))
+            return new EventData(start, combat, mechanic, resource);
+
+        return EventData.Empty;
+    }
+
+    private sealed class EventData
+    {
+        public static readonly EventData Empty = new(0, [], [], []);
+
+        private readonly CombatEventSegment _segment;
+        private readonly CombatEventRecord[]? _combatArray;
+        private readonly long _arrayStart;
+
+        public EventData(CombatEventSegment segment, CombatMechanicEventRecord[] mechanic, CombatResourceEventRecord[] resource)
+        {
+            _segment = segment;
+            Mechanic = mechanic;
+            Resource = resource;
+        }
+
+        public EventData(long start, CombatEventRecord[] combat, CombatMechanicEventRecord[] mechanic, CombatResourceEventRecord[] resource)
+        {
+            _combatArray = combat;
+            _arrayStart = start;
+            Mechanic = mechanic;
+            Resource = resource;
+        }
+
+        public CombatMechanicEventRecord[] Mechanic { get; }
+        public CombatResourceEventRecord[] Resource { get; }
+
+        public ref readonly CombatEventRecord GetCombat(long ordinal)
+        {
+            if (_combatArray is null)
+                return ref _segment.GetEvent(ordinal);
+            return ref _combatArray[ordinal - _arrayStart];
+        }
+
+        public void WriteTo(string path)
+        {
+            CombatEventRecord[] combat;
+            long start;
+            if (_combatArray is not null)
+            {
+                combat = _combatArray;
+                start = _arrayStart;
+            }
+            else
+            {
+                start = _segment.StartEventOrdinal;
+                combat = new CombatEventRecord[_segment.Count];
+                for (var i = 0; i < combat.Length; i++)
+                    combat[i] = _segment.GetEvent(start + i);
+            }
+
+            ArchiveSpillFile.Write(path, start, combat, Mechanic, Resource);
+        }
     }
 
     private static long SaturatingAdd(long first, long second, long third)

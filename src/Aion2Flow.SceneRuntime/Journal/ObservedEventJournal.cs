@@ -16,6 +16,8 @@ public sealed class ObservedEventJournal(int capacity = 0)
     private long _nextObservationOrdinal;
     private long _lastCompletedFlushId = -1;
 
+    public bool DiscardConsumed { get; init; }
+
     public int Count
     {
         get { lock (_gate) return _count; }
@@ -122,6 +124,33 @@ public sealed class ObservedEventJournal(int capacity = 0)
 
         lock (_gate)
             _segments.EnsureCapacity(ResolveSegmentCapacity(capacity));
+    }
+
+    /// <summary>
+    /// Releases whole leading segments whose entries all precede <paramref name="observationOrdinal"/>.
+    /// The last segment is always kept. Returns the number of entries released.
+    /// Only active when <see cref="DiscardConsumed"/> (LiteMode, T2.2); raw playback of trimmed ranges is unavailable.
+    /// </summary>
+    public int TrimBefore(long observationOrdinal)
+    {
+        if (!DiscardConsumed)
+            return 0;
+
+        lock (_gate)
+        {
+            if (_count == 0)
+                return 0;
+
+            var wholeSegments = (int)Math.Min((observationOrdinal - _firstObservationOrdinal) / SegmentCapacity, _segments.Count - 1);
+            if (wholeSegments <= 0)
+                return 0;
+
+            _segments.RemoveRange(0, wholeSegments);
+            var removed = wholeSegments * SegmentCapacity;
+            _firstObservationOrdinal += removed;
+            _count -= removed;
+            return removed;
+        }
     }
 
     public void CompleteFlush(long flushId)

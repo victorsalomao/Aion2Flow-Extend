@@ -59,5 +59,7 @@ public sealed class AppSettings
 
     public uint? OverlayInteractionHotkeyVirtualKey { get; set; }
 
+    public bool LiteMode { get; set; } = true;
+
     public Point? MainWindowPosition { get; set; }
 }
