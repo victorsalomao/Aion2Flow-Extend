@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.ComponentModel;
+
 
 namespace Cloris.Aion2Flow.ViewModels.Progress;
 
@@ -12,9 +12,11 @@ public sealed class ProgressTabViewModel(string header, IReadOnlyList<ProgressIt
 }
 
 /// <summary>Casca das abas Overlay/Hoje/Semana/Alts/Timers com dados fake (sem banco).</summary>
-public sealed partial class ProgressTabsViewModel : ObservableObject
+public sealed class ProgressTabsViewModel : FrameBatchedObservableObject
 {
-    public ProgressTabsViewModel()
+    private ProgressTabViewModel _selectedTab;
+
+    public ProgressTabsViewModel(UiFrameBatchService frameBatchService) : base(frameBatchService)
     {
         Tabs =
         [
@@ -24,11 +26,15 @@ public sealed partial class ProgressTabsViewModel : ObservableObject
             new("Alts", [new("Personagem principal", "-")]),
             new("Timers", [new("Reset diário", "--:--:--")]),
         ];
-        SelectedTab = Tabs[0];
+        _selectedTab = Tabs[0];
     }
 
     public ObservableCollection<ProgressTabViewModel> Tabs { get; }
 
-    [ObservableProperty]
-    public partial ProgressTabViewModel SelectedTab { get; set; }
+
+    public ProgressTabViewModel SelectedTab
+    {
+        get => _selectedTab;
+        set => SetFrameProperty(ref _selectedTab, value);
+    }
 }

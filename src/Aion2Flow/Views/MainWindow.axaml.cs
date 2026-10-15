@@ -677,6 +677,21 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ProgressFlyoutOpening(object? sender, EventArgs e)
+    {
+        // Lazy: view e viewmodel so existem enquanto o flyout estiver aberto.
+        if (ProgressButton.Flyout is Flyout f) f.Content = new Progress.ProgressTabsView
+        {
+            DataContext = Ioc.Default.GetRequiredService<ViewModels.Progress.ProgressTabsViewModel>(),
+            MinWidth = 240,
+        };
+    }
+
+    private void ProgressFlyoutClosed(object? sender, EventArgs e)
+    {
+        if (ProgressButton.Flyout is Flyout f) f.Content = null;
+    }
+
     private void FlyoutClosed(object? sender, EventArgs e)
     {
         DataContext.SelectCombatantCommand.Execute(null);

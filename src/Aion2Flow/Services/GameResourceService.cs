@@ -246,8 +246,10 @@ public sealed class GameResourceService : IDisposable
     {
         var catalog = ResourceCatalog.Load(language);
 
+        SkillDisplayCatalog? previousSkills;
         lock (_lock)
         {
+            previousSkills = Skills;
             CurrentLanguage = language;
             _catalog = catalog;
             Skills = catalog.Skills;
@@ -256,6 +258,11 @@ public sealed class GameResourceService : IDisposable
             ServerNames = catalog.ServerNames;
         }
 
+        // T2.6: keep only the active language pack resident. Seed/refresh the combat registry from the active
+        // language when it is empty or still holds our previous catalog, so it never pins en-US or a stale pack.
+        // A registry populated by someone else (tests, replay) is left untouched.
+        if (CombatResourceRegistry.SkillMap.Count == 0 || ReferenceEquals(CombatResourceRegistry.SkillMap, previousSkills))
+            CombatResourceRegistry.SetGameResources(catalog);
         CombatResourceRegistry.UpdateDisplayResources(catalog.Skills, catalog.NpcCatalog);
         ResourcesChanged?.Invoke(this, language);
     }

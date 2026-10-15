@@ -318,6 +318,22 @@
                     </Button.Flyout>
                 </Button>
 
+                <Button x:Name="ProgressButton"
+                        Grid.Column="0"
+                        Margin="30,0,0,0"
+                        Classes="BottomBarButton"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Left">
+                    <Path Classes="Glyph GlyphMd" Data="{StaticResource history}" />
+                    <Button.Flyout>
+                        <Flyout
+                                Placement="TopEdgeAlignedLeft"
+                                ShowMode="Transient"
+                                Opening="ProgressFlyoutOpening"
+                                Closed="ProgressFlyoutClosed" />
+                    </Button.Flyout>
+                </Button>
+
                 <StackPanel Orientation="Horizontal"
                             Grid.Column="1"
                             Spacing="6"

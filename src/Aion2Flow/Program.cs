@@ -87,6 +87,7 @@ internal static class Program
         services.AddSingleton<GlobalHotkeyService>();
         services.AddSingleton<OverlayInteractionController>();
         services.AddSingleton<SettingsFlyoutViewModel>();
+        services.AddTransient<Cloris.Aion2Flow.ViewModels.Progress.ProgressTabsViewModel>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainAppWindow>();
 
