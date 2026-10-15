@@ -29,26 +29,26 @@ Detalhe da S1: `docs/SPRINT-1.md`.
 
 | ID | Task | Fase | Trilha | Cx | Agente | Modelo | Pts | Depende de | Sprint | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| T0.1 | Fork, clone, build .NET 10 | 0 | E | C1 | ops-docs | haiku | 1 | — | S1 | doing (clone+build OK; fork no GitHub pendente) |
+| T0.1 | Fork, clone, build .NET 10 | 0 | E | C1 | ops-docs | haiku | 1 | — | S1 | done (fork victorsalomao/Aion2Flow-Extend) |
 | T0.2 | `dotnet test` e baseline verde | 0 | E | C1 | test-engineer | sonnet | 1 | T0.1 | S1 | done (25 replay + 1046 unit = 1071 verdes, 14/10) |
 | T0.3 | CLAUDE.md na raiz | 0 | E | C1 | ops-docs | haiku | 1 | T0.1 | S1 | done |
 | T0.4 | CI GitHub Actions (windows-latest) | 0 | E | C1 | ops-docs | haiku | 2 | T0.2 | S1 | done (ci.yml upstream já cobre build+test em windows-latest) |
-| T1.1 | `tools/bench.ps1` (replay + dotnet-counters) | 1 | A | C2 | perf-engineer | sonnet | 3 | T0.2 | S1 | todo |
-| T1.2 | `docs/perf-baseline.md` (idle / 5 min / 10 lutas) | 1 | A | C2 | perf-engineer | sonnet | 2 | T1.1 | S1 | todo |
-| T1.3 | gcdump após 10 lutas, top 10 tipos | 1 | A | C2 | perf-engineer | sonnet | 2 | T1.1 | S1 | todo |
-| T1.4 | Confirmar/descartar H1–H7 | 1 | A | C3 | perf-engineer | sonnet | 3 | T1.3 | S1 | todo |
-| G1 | **Gate:** priorizar F2 conforme T1.4 | 1 | A | C4 | tech-lead | opus | 1 | T1.4 | S1 | todo |
+| T1.1 | `tools/bench.ps1` (replay + dotnet-counters) | 1 | A | C2 | perf-engineer | sonnet | 3 | T0.2 | S1 | done (14/10) |
+| T1.2 | `docs/perf-baseline.md` (idle / 5 min / 10 lutas) | 1 | A | C2 | perf-engineer | sonnet | 2 | T1.1 | S1 | done (14/10) |
+| T1.3 | gcdump após 10 lutas, top 10 tipos | 1 | A | C2 | perf-engineer | sonnet | 2 | T1.1 | S1 | done (14/10) |
+| T1.4 | Confirmar/descartar H1–H7 | 1 | A | C3 | perf-engineer | sonnet | 3 | T1.3 | S1 | done (14/10) |
+| G1 | **Gate:** priorizar F2 conforme T1.4 | 1 | A | C4 | tech-lead | opus | 1 | T1.4 | S1 | done: prioridade T2.2+T2.3 > T2.7; T2.4/T2.6 viram verificação (já lazy) |
 | T2.1 | Flag `LiteMode` em Settings | 2 | A | C2 | core-dev | sonnet | 1 | T0.2 | S1 | todo |
 | T2.2 | Journal → agregados incrementais + paridade | 2 | A | C3 | perf-engineer | sonnet | 8 | T2.1, G1 | S1 | todo |
 | T2.3 | Archive em disco comprimido, resumo em RAM | 2 | A | C3 | perf-engineer #2 | sonnet | 5 | T2.1, G1 | S1 | todo |
-| T2.4 | Playback lazy + liberar ao fechar | 2 | C | C3 | ui-dev | sonnet | 5 | T2.1, G1 | S1 | todo |
+| T2.4 | Playback lazy + liberar ao fechar | 2 | C | C3 | ui-dev | sonnet | 5 | T2.1, G1 | S1 | todo (H3 descartada: só validar liberação ao fechar) |
 | T2.5 | Sem animações no LiteMode, UI a 4 Hz | 2 | C | C2 | ui-dev | sonnet | 3 | T2.1 | S1 | todo |
-| T2.6 | Carregar só o pack de idioma ativo | 2 | A | C2 | core-dev | sonnet | 2 | T2.1 | S1 | todo |
+| T2.6 | Carregar só o pack de idioma ativo | 2 | A | C2 | core-dev | sonnet | 2 | T2.1 | S1 | todo (H6 descartada: só validar) |
 | T2.7 | Change logs em ring buffer | 2 | A | C2 | core-dev | sonnet | 2 | T2.1 | S1 | todo |
 | T2.8 | Tuning de GC, uma flag por vez | 2 | A | C3 | perf-engineer | sonnet | 3 | T2.2–T2.7 | S2 | todo |
 | T2.9 | Bench final vs baseline (meta −50%) | 2 | A | C2 | perf-engineer | sonnet | 2 | T2.8 | S2 | todo |
 | T3.1 | `Aion2Flow.Persistence` (SQLite AOT) | 3 | B | C2 | core-dev #2 | sonnet | 5 | T0.2 | S1 | todo |
-| T3.2 | `Aion2Flow.Domain.Progress` | 3 | B | C2 | core-dev #2 | sonnet | 3 | T0.2 | S1 | todo |
+| T3.2 | `Aion2Flow.Domain.Progress` | 3 | B | C2 | core-dev #2 | sonnet | 3 | T0.2 | S1 | done (14/10, 8 testes) |
 | T3.3 | `ResetClock` multi-fuso | 3 | B | C3 | core-dev #2 | sonnet | 3 | T3.2 | S1 | todo |
 | T3.4 | Abas Overlay / Hoje / Semana / Alts / Timers | 3 | C | C2 | ui-dev #2 | sonnet | 3 | T3.2 | S1 | todo |
 | T3.5 | Testes do ResetClock (dia, semana, DST) | 3 | B | C2 | test-engineer | sonnet | 2 | T3.3 | S1 | todo |
@@ -58,9 +58,14 @@ Detalhe da S1: `docs/SPRINT-1.md`.
 | T4.4 | Recarga de resina + notificação | 4 | B | C2 | core-dev | sonnet | 3 | T4.3 | S2 | todo |
 | T4.5 | `data/events.json` + timers | 4 | C/E | C1/C2 | ops-docs + ui-dev | haiku/sonnet | 3 | T3.3 | S2 | todo |
 | T4.6 | Calculadora de temporada | 4 | B | C2 | core-dev | sonnet | 2 | T4.3 | S2 | todo |
-| T5.1 | Gravar sessões de pacotes (**capturas do Victor até 18/10**) | 5 | D | C2 | protocol-re | sonnet | 2 | Victor | S1 | blocked (externo) |
+| T5.1 | Gravar sessões de pacotes (**capturas do Victor até 18/10**) | 5 | D | C2 | protocol-re | sonnet | 2 | Victor | S1 | blocked — roteiro pronto em docs/ROTEIRO-CAPTURAS.md (build Debug), aguarda Victor até 18/10 |
 | T5.2 | Diff de opcodes | 5 | D | C3 | protocol-re | sonnet | 5 | T5.1 | S1 | todo |
 | T5.3 | Parsers novos + testes | 5 | D | C3 | protocol-re | sonnet | 5 | T5.2 | S2 | todo |
 | T5.4 | Publicar no Module.Progress (fallback manual) | 5 | D | C2 | core-dev | sonnet | 3 | T5.3, T3.2 | S2 | todo |
 | T5.5 | Tabela de opcodes versionada | 5 | D | C2 | protocol-re | sonnet | 3 | T5.3 | S2 | todo |
 | T6.x | Insights / LLM (opcional) | 6 | — | C4→C2 | tech-lead define | — | — | — | stretch | todo |
+
+## Log de progresso
+- **14/10 (D0, adiantado):** Fase 0 ✅ (fork victorsalomao/Aion2Flow-Extend, build 0 warnings, 1071 testes). Fase 1 ✅ (bench core-only: idle 25 MB, 10 lutas **249 MB** vs meta 100 MB; H1/H2/H7 confirmadas, H3/H6 descartadas, H4/H5 inconclusivas). T3.2 ✅. Roteiro de capturas ✅.
+- **Pendências técnicas:** medir app completo com UI+WinDivert (admin) para RAM idle real, CPU em luta, H4/H5; refazer gcdump não-lossy. Limpar `D:\tmpbench\` (lixo de build).
+- **Próxima sessão:** T2.1 → T2.2 ‖ T2.3 ‖ T2.7 (trilha A), T3.1 ‖ T3.3 (trilha B), T2.5 (trilha C).
