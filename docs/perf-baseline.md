@@ -84,3 +84,24 @@ T2.7: `ChangeRingBuffer` limitado a 65.536 entradas por store (Combat/Mechanic/R
 | Combinado S1 (run1 / run2) | 158,1 / 159,3 | 158,3 / 161,3 | 73,7 / 73,7 |
 
 Variacao entre runs: WS 0,8%. Ganho total vs antes: -91 MB WS (-36%), -113 MB heap (-61%). CPU (pct) varia 13% entre runs, sem alta aparente. Private Bytes/5 min nao medidos (harness sem UI). Obs: o ganho do T2.7 isolado (~-12 MB WS) e pequeno nas fixtures porque poucos logs passam de 65k mudancas por store.
+
+## T2.4/T2.6 - Verificacao de Playback e pack de idioma (2026-10-15)
+Metodo: leitura de codigo + testes novos (`ScenePlaybackReleaseTests`, `ResourceCatalogActiveLanguageTests`); medicao de heap gerenciado por GC.GetTotalMemory (Debug, apos GC forcado).
+
+**T2.4 (a) Playback libera ao fechar: OK, sem correcao.** `ScenePlaybackWindow.OnClosed` -> `ScenePlaybackViewModel.DisposeAsync` -> `ScenePlaybackController.DisposeAsync` (cancela loops, `Source.Dispose`); `PlaybackWindowController.Untrack` zera a referencia da janela. O projector/session so vivem dentro do controller, e o `ArchivedScenePlaybackSource` nao copia o payload (compartilha o do historico). Teste `DisposeAsync_ReleasesSessionAndProjector` (WeakReference em controller+session apos Play/Pause/Dispose + GC) passa. O playback so e criado em `OpenPlayback` (lazy).
+**T2.4 (b) Interacao com LiteMode.**
+- Archive em disco (T2.3): playback e `CreateDetailDelta` funcionam com o payload spilled (detalhes recarregados do .asf sob demanda, sem cache). Teste `LiteMode_SpilledArchive_Playback_And_Detail_Work`.
+- Journal descartado (T2.2): nao quebra (sem excecao; segmento ja trimado le vazio e o range cai no `EncounterEndTime` do snapshot), mas a linha do tempo bruta de lutas ja projetadas fica vazia/parcial: limitacao conhecida e documentada de T2.2, os totais do snapshot arquivado permanecem identicos ao modo completo. Teste `LiteMode_TrimmedJournal_Playback_DoesNotThrow_And_ArchiveKeepsTotals`. Se o produto exigir replay completo no LiteMode, e preciso incluir o journal no spill do archive (fora do escopo desta verificacao).
+
+**T2.6 Pack de idioma ativo: NAO estava OK; corrigido.** Medidas (heap gerenciado): shared 5,2 MB (sempre necessario), cada locale 2,7-3,2 MB. Vazamentos: (1) `ResourceCatalog.Snapshots` mantinha todo idioma ja pedido (trocar de idioma acumulava ~3 MB por troca); (2) `SceneMapIdClassifier` fixava o snapshot en-US para sempre; (3) `CombatResourceRegistry.EnsureCombatResources` carregava en-US alem do idioma ativo. Correcao minima: `ResourceCatalog.Load` descarta os snapshots de outros idiomas; `LoadKnownMapIds()` (usa en-US transitorio, sem fixar); `GameResourceService.Reload` semeia/atualiza o registry com o idioma ativo apenas se estiver vazio ou ainda apontar para o catalogo anterior dele (registry populado por testes/replay fica intocado). Ganho esperado: ~-3 MB (usuario nao-en) e nao cresce mais ao trocar idioma; nao medido no app real (harness sem UI).
+Validacao: UnitTests 1057 + ReplayTests 50 verdes (Debug; Release bloqueado por exe/compilador em uso pelo outro agente), 0 warnings.
+
+## Medicao real do app AOT publicado (2026-10-15)
+Build: `dotnet publish src/Aion2Flow -c Release -r win-x64` OK (precisou de vswhere no PATH: `C:\Program Files (x86)\Microsoft Visual Studio\Installer`). Aion2Flow.exe = 33.054.208 B (31,5 MB).
+App real, LiteMode default, admin, WinDivert com o jogo AION2 aberto (16 cores). Metodo: Process.WorkingSet64/PrivateMemorySize64/TotalProcessorTime.
+| Metrica | Valor |
+|---|---|
+| Idle ~2 min: Working Set / Private Bytes | 138,0 MB / 129,5 MB |
+| Apos +3 min: Working Set / Private Bytes | 156,0 MB / 151,8 MB |
+| CPU medio 3 min (% do total de 16 cores) | 0,53% (~8,5% de 1 core) |
+Obs: nao foi coletado GC heap (dotnet-counters nao usado); sem confirmacao de quanto combate houve na janela. Crescimento +18 MB em 3 min requer sessao mais longa (H4/H5) para separar warm-up de vazamento.

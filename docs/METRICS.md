@@ -83,3 +83,5 @@ Desvio > 10 p.p. abaixo do alvo → `po` sinaliza no relatório e tech-lead re-p
 
 ## Histórico
 _(sprints concluídas entram aqui, mais recente primeiro)_
+
+- 2026-10-15 (medicao real AOT, LiteMode): exe 31,5 MB; RAM idle 2 min WS 138 MB / Private 130 MB; +3 min WS 156 / Private 152 MB; CPU medio 0,53% do total (16 cores). Pendente: H4/H5 (sessao longa/10 lutas), T2.5 CPU de UI com overlay em combate, GC heap.

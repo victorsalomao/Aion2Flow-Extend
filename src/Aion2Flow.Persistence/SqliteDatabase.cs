@@ -14,6 +14,9 @@ public sealed class SqliteDatabase : IDisposable
         CREATE TABLE task_progress (alt_id TEXT NOT NULL REFERENCES alts(id) ON DELETE CASCADE, task_id TEXT NOT NULL, current INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY (alt_id, task_id));
         CREATE TABLE resources (alt_id TEXT NOT NULL REFERENCES alts(id) ON DELETE CASCADE, key TEXT NOT NULL, current INTEGER NOT NULL, max INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY (alt_id, key));
         """,
+        """
+        CREATE TABLE manual_fields (alt_id TEXT NOT NULL REFERENCES alts(id) ON DELETE CASCADE, key TEXT NOT NULL, value INTEGER NOT NULL, day_start_value INTEGER NOT NULL, day_start_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY (alt_id, key));
+        """,
     ];
 
     private readonly SqliteConnection _connection;

@@ -11,7 +11,7 @@ public class RepositoryTests
     public void Migration_sets_version()
     {
         using var db = SqliteDatabase.InMemory();
-        Assert.Equal(1, db.SchemaVersion);
+        Assert.Equal(2, db.SchemaVersion);
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public class RepositoryTests
             using (var db = new SqliteDatabase(path)) await new SqliteAltRepository(db).SaveAsync(a);
             using (var db = new SqliteDatabase(path))
             {
-                Assert.Equal(1, db.SchemaVersion);
+                Assert.Equal(2, db.SchemaVersion);
                 Assert.Equal(a, await new SqliteAltRepository(db).GetAsync(a.Id));
             }
         }

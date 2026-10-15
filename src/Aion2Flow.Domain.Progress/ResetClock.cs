@@ -19,6 +19,8 @@ public interface IResetClock
 {
     DateTimeOffset NextDaily();
     DateTimeOffset NextWeekly();
+    DateTimeOffset LastDaily();
+    DateTimeOffset LastWeekly();
 }
 
 /// <summary>Calcula os proximos resets no fuso do servidor; nunca usa o fuso local.</summary>
@@ -41,6 +43,17 @@ public sealed class ResetClock : IResetClock
     public DateTimeOffset NextDaily() => Next(0);
 
     public DateTimeOffset NextWeekly() => Next((int)_rule.WeeklyDay + 1);
+
+    public DateTimeOffset LastDaily() => Previous(0);
+
+    public DateTimeOffset LastWeekly() => Previous((int)_rule.WeeklyDay + 1);
+
+    private DateTimeOffset Previous(int weekDay)
+    {
+        var next = Next(weekDay);
+        var date = TimeZoneInfo.ConvertTime(next, _zone).Date.AddDays(weekDay == 0 ? -1 : -7);
+        return ToOffset(date + _rule.DailyTime);
+    }
 
     // weekDay = 0: diario; senao dia da semana + 1.
     private DateTimeOffset Next(int weekDay)

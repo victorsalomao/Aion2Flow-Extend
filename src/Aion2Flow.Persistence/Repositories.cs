@@ -114,3 +114,38 @@ public sealed class SqliteResourceRepository(SqliteDatabase db) : IResourceRepos
         return Task.CompletedTask;
     }
 }
+
+public sealed class SqliteManualFieldRepository(SqliteDatabase db) : IManualFieldRepository
+{
+    public Task<IReadOnlyList<ManualField>> ListByAltAsync(AltId altId, CancellationToken ct = default) =>
+        Task.FromResult<IReadOnlyList<ManualField>>(db.Query(
+            "SELECT key, value, day_start_value, day_start_at, updated_at FROM manual_fields WHERE alt_id = $a ORDER BY key;",
+            p => p.AddWithValue("$a", altId.Value.ToString()),
+            r => new ManualField(altId, r.GetString(0), r.GetInt64(1), r.GetInt64(2),
+                DateTimeOffset.FromUnixTimeMilliseconds(r.GetInt64(3)), DateTimeOffset.FromUnixTimeMilliseconds(r.GetInt64(4)))));
+
+    public Task SaveAsync(ManualField f, CancellationToken ct = default)
+    {
+        db.Run("INSERT INTO manual_fields (alt_id, key, value, day_start_value, day_start_at, updated_at) VALUES ($a, $k, $v, $d, $s, $u) " +
+               "ON CONFLICT(alt_id, key) DO UPDATE SET value=$v, day_start_value=$d, day_start_at=$s, updated_at=$u;", p =>
+        {
+            p.AddWithValue("$a", f.AltId.Value.ToString());
+            p.AddWithValue("$k", f.Key);
+            p.AddWithValue("$v", f.Value);
+            p.AddWithValue("$d", f.DayStartValue);
+            p.AddWithValue("$s", f.DayStartAt.ToUnixTimeMilliseconds());
+            p.AddWithValue("$u", f.UpdatedAt.ToUnixTimeMilliseconds());
+        });
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteAsync(AltId altId, string key, CancellationToken ct = default)
+    {
+        db.Run("DELETE FROM manual_fields WHERE alt_id = $a AND key = $k;", p =>
+        {
+            p.AddWithValue("$a", altId.Value.ToString());
+            p.AddWithValue("$k", key);
+        });
+        return Task.CompletedTask;
+    }
+}
